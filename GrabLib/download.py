@@ -42,7 +42,7 @@ def download_python_path(python_fpath, target = None, overwrite = None, verbosit
     return _overwrite_options_download(GrabSettings.libs, options, target, overwrite, verbosity, file_permissions, output)
     
     
-def _overwrite_options_download(libs_info, options, target, overwrite, verbosity, file_perm, output):
+def _overwrite_options_download(libs_info, options, target, overwrite, verbosity, file_permissions, output):
     for attr, default in options.items():
         if locals()[attr] is not None:
             options[attr] = locals()[attr]

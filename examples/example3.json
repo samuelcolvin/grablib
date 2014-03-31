@@ -1,0 +1,8 @@
+{
+  "target": "example3_statics",
+  "overwrite": true,
+  "libs":
+{
+  "https://raw.github.com/CreateJS/EaselJS/release_v0.7.1/lib/easeljs-0.7.1.min.js": "easeljs.min.js"
+}
+}
