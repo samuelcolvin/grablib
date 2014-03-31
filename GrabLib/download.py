@@ -7,50 +7,53 @@ except ImportError:
     import json
 DEFAULT_VERBOSITY = 2
 DEFAULTS = {
-            'target': None, 
-            'verbosity': DEFAULT_VERBOSITY,
-            'overwrite': False
+    'target': None, 
+    'verbosity': DEFAULT_VERBOSITY,
+    'overwrite': False,
+    'file_permissions': None,
+    'output': None,
 }
 
 class KnownError(Exception):
     pass
 
-def download_json_path(json_path, target = None, overwrite=False, verbosity = DEFAULT_VERBOSITY, file_perm = None, output = None):
+def download_json_path(json_path, target = None, overwrite = None, verbosity = None, file_permissions = None, output = None):
     jcontent = json.load(open(json_path, 'r'))
-    if target is None and 'target' not in jcontent:
-        raise KnownError('target argument was None and target not found in json: %s' % json_path)
-    if target is None:
-        target = jcontent['target']
-    options = {}
+    options = {k:v for k,v in DEFAULTS.items()}
     if 'libs' in jcontent:
         libs_info = jcontent['libs']
-        options = jcontent
+        for k, v in jcontent.items():
+            if k in DEFAULTS:
+                options[k] = v
     else:
         libs_info = jcontent
-    _check_and_download(libs_info, options, target, overwrite, verbosity, file_perm, output)
+    return _overwrite_options_download(libs_info, options, target, overwrite, verbosity, file_permissions, output)
 
-def download_python_path(python_fpath, target = None, overwrite = None, verbosity = None, file_perm = None, output = None):
+def download_python_path(python_fpath, target = None, overwrite = None, verbosity = None, file_permissions = None, output = None):
     try:
         imp.load_source('GrabSettings', python_fpath)
         import GrabSettings
     except Exception, e:
         raise Exception('Error importing %s: %s' % (python_fpath, str(e)))
-    options = {}
+    options = {k:v for k,v in DEFAULTS.items()}
     for name in DEFAULTS.keys():
         if hasattr(GrabSettings, name):
             options[name] = getattr(GrabSettings, name)
-    _check_and_download(GrabSettings.libs, options, target, overwrite, verbosity, file_perm, output)
+    return _overwrite_options_download(GrabSettings.libs, options, target, overwrite, verbosity, file_permissions, output)
     
     
-def _check_and_download(libs_info, extra_options, target, overwrite, verbosity, file_perm, output):    
-    for attr, default in DEFAULTS.items():
-        if locals()[attr] is None:
-            if attr in extra_options:
-                locals()[attr] = extra_options[attr]
-            locals()[attr] = default
-    if target is None:
-        raise KnownError('target argument was None and target not settings.')
-    DownloadLibs(libs_info, target, overwrite, verbosity, file_perm, output).download()
+def _overwrite_options_download(libs_info, options, target, overwrite, verbosity, file_perm, output):
+    for attr, default in options.items():
+        if locals()[attr] is not None:
+            options[attr] = locals()[attr]
+    if options['target'] is None:
+        raise KnownError('target argument was None and target not defined in definition file')
+    return DownloadLibs(libs_info, 
+                        options['target'], 
+                        options['overwrite'], 
+                        options['verbosity'],
+                        options['file_permissions'],
+                        options['output']).download()
             
 class DownloadLibs(object):
     """
@@ -75,6 +78,10 @@ class DownloadLibs(object):
             self.output = output
         else:
             self.output = self._output
+        if overwrite != DEFAULTS['overwrite']:
+            self.output('Overwrite set to %r' % overwrite)
+        if verbosity != DEFAULTS['verbosity']:
+            self.output('Verbosity set to %d' % verbosity)
         self.file_perm = file_perm
         
     def __call__(self):
@@ -87,6 +94,7 @@ class DownloadLibs(object):
         """
         perform download and save.
         """
+        self.output('', 3)
         self.downloaded = 0
         self.ignored = 0
         for url, value in self.libs_info.items():

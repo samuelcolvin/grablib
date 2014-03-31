@@ -1,4 +1,9 @@
+# definition files can either be JSON (see example2.json) or python
+# in either format target, verbosity, overwrite, file_permissions can be defined.
+# they can all also be overwritten at the command line.
+# in python format or using the API a special output function may also be defined
 target =  "static_libs"
+verbosity = 3
 libs = {
   "https://raw.github.com/twbs/bootstrap/v3.1.1/dist/css/bootstrap.min.css": "{{ filename }}",
   "https://raw.github.com/twbs/bootstrap/v3.1.1/dist/css/bootstrap-theme.min.css": "{{ filename }}",

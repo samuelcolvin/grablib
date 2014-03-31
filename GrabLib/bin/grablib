@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import sys, os, traceback
+sys.path.append('/home/samuel/Dropbox/dev/eclipse_workspace_ub/GrabLib/grab-lib.git')
 try:
     import GrabLib
 except ImportError:
@@ -13,48 +14,43 @@ parser = argparse.ArgumentParser(description="""GrabLib
 Utility for defining and downloading your projects external library files eg. Javascript, CSS.
 GrabLib Version: %s
 (https://github.com/samuelcolvin/GrabLib).
+All optional arguments can also be set in the definition file.
 
 """ % GrabLib.__version__, formatter_class=argparse.RawTextHelpFormatter)
 
-parser.add_argument('-w', '--overwrite', action='store_true', 
-    help = 'Overwrite existing files, default is not to download a library if the file already exists')
-
-parser.add_argument('-v', '--verbosity', nargs='?', default = GrabLib.DEFAULT_VERBOSITY, action='store',
-    help = 'Verbosity Level 0 (nothing except errors), 1 (less), 2 (normal), 3 (everything)')
-
-parser.add_argument('-t', '--target', nargs='?',
+parser.add_argument('-t', '--target', action='store',
     help='Download location, omit to use value from definition file.')
 
-parser.add_argument('def_path', metavar='definition-path', nargs='?',
-    help='path to JSON or Python File defining libs, default: %s' % GrabLib.DEFAULT_JSON_FILE)
+parser.add_argument('-w', '--overwrite', action='store', 
+    help = 'Overwrite existing files, default is not to download a library if the file already exists')
+
+parser.add_argument('-p', '--file_permissions', action='store', 
+    help = 'Explicitly set file permission for each file downloaded, eg. 666')
+
+parser.add_argument('-v', '--verbosity', action='store',
+    help = 'Verbosity Level 0 (nothing except errors), 1 (less), 2 (normal), 3 (everything)')
+
+parser.add_argument('def_path', metavar='json_or_python_path',
+    help='path to JSON or Python File defining libs')
     
 try:
     args = parser.parse_args()
-    try:
-        args.verbosity = int(args.verbosity)
-    except ValueError:
-        raise GrabLib.KnownError('problem converting verbosity to int, value: "%s" is not an integer'\
-                                  % args.verbosity)
+    if args.verbosity is not None:
+        try:
+            args.verbosity = int(args.verbosity)
+        except Exception:
+            raise GrabLib.KnownError('problem converting verbosity to int, value: "%s" is not an integer'\
+                                      % args.verbosity)
     
-    if args.def_path is None:
-        print 'Definition path missing, assuming default: %s' % GrabLib.DEFAULT_JSON_FILE
-        args.def_path = GrabLib.DEFAULT_JSON_FILE
     if not os.path.exists(args.def_path):
         raise GrabLib.KnownError('Libs definition file not found: %s' % args.def_path)
     path_lower = args.def_path.lower()
     if not any([path_lower.endswith(ext) for ext in ('.py', '.json')]):
         raise GrabLib.KnownError('Libs definition file does not have extension .py or .json: %s' % args.def_path)
-#     for arg in ['overwrite', 'verbosity', 'target', 'def_path']:
-#         print '%s: %r' % (arg, getattr(args, arg))
     if path_lower.endswith('.py'):
-        ftype = 'Python'
-        dfunc =  GrabLib.download_python_path
+        dfunc = GrabLib.download_python_path
     else:
-        ftype = 'JSON'
         dfunc = GrabLib.download_json_path
-        
-    if args.verbosity >= GrabLib.DEFAULT_VERBOSITY:
-        print 'processing %s file "%s"' % (ftype, args.def_path)
         
     dfunc(args.def_path, 
           args.target, 
