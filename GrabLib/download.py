@@ -6,6 +6,11 @@ try:
 except ImportError:
     import json
 DEFAULT_VERBOSITY = 2
+DEFAULTS = {
+            'target': None, 
+            'verbosity': DEFAULT_VERBOSITY,
+            'overwrite': False
+}
 
 class KnownError(Exception):
     pass
@@ -16,26 +21,36 @@ def download_json_path(json_path, target = None, overwrite=False, verbosity = DE
         raise KnownError('target argument was None and target not found in json: %s' % json_path)
     if target is None:
         target = jcontent['target']
+    options = {}
     if 'libs' in jcontent:
         libs_info = jcontent['libs']
+        options = jcontent
     else:
         libs_info = jcontent
-    DownloadLibs(libs_info, target, overwrite, verbosity, file_perm, output).download()
+    _check_and_download(libs_info, options, target, overwrite, verbosity, file_perm, output)
 
-def download_python_path(python_fpath, target = None, overwrite=False, verbosity = DEFAULT_VERBOSITY, file_perm = None, output = None):
+def download_python_path(python_fpath, target = None, overwrite = None, verbosity = None, file_perm = None, output = None):
     try:
         imp.load_source('GrabSettings', python_fpath)
         import GrabSettings
     except Exception, e:
         raise Exception('Error importing %s: %s' % (python_fpath, str(e)))
-    if target is None and not hasattr(GrabSettings, 'target'):
-        raise KnownError('target argument was None and target not found in python: %s' % python_fpath)
+    options = {}
+    for name in DEFAULTS.keys():
+        if hasattr(GrabSettings, name):
+            options[name] = getattr(GrabSettings, name)
+    _check_and_download(GrabSettings.libs, options, target, overwrite, verbosity, file_perm, output)
+    
+    
+def _check_and_download(libs_info, extra_options, target, overwrite, verbosity, file_perm, output):    
+    for attr, default in DEFAULTS.items():
+        if locals()[attr] is None:
+            if attr in extra_options:
+                locals()[attr] = extra_options[attr]
+            locals()[attr] = default
     if target is None:
-        target = GrabSettings.target
-    libs_info = GrabSettings.libs
-    downlibs = DownloadLibs(libs_info, target, overwrite, verbosity, file_perm, output)
-#     at_names = ['target', 'verbosity', 'overwrite']
-    downlibs.download()
+        raise KnownError('target argument was None and target not settings.')
+    DownloadLibs(libs_info, target, overwrite, verbosity, file_perm, output).download()
             
 class DownloadLibs(object):
     """
@@ -179,24 +194,5 @@ class DownloadLibs(object):
     def _output(self, line, verbosity = DEFAULT_VERBOSITY):
         if verbosity <= self.verbosity:
             print line
-
-    def _read_json(self, path_or_string, remove_comments = True):
-        """
-        decodes json.
-        can take either a path or a json string.
-        """
-        if os.path.exists(path_or_string):
-            text = open(path_or_string, 'r').read()
-        else:
-            text = path_or_string
-        # # comment removal, might be useful but a bit funky for now.
-#         if remove_comments and '#' in text:
-#             self.output('removing comments from JSON...', 3)
-#             json_string = '\n'.join([l for l in text.split('\n') if not l.startswith('#')])
-#             print json_string
-#         else:
-        json_string = text
-        return json.loads(json_string)
-
 
 

@@ -5,6 +5,6 @@
   "https://raw.github.com/CreateJS/EaselJS/release_v0.7.1/lib/easeljs-0.7.1.min.js": "easeljs.min.js",
   "https://box2dweb.googlecode.com/files/Box2dWeb-2.1a.3.zip":
   {
-    ".*(Box2dWeb-2.1.a.3.min.js)": "{{ filename }}"
+    ".*(Box2dWeb-2.1.a.3.min.js)": "b2d/{{ filename }}"
   }
 }

@@ -12,7 +12,7 @@ except IOError:
     print '%s not found, long_description is short' % docs_file
     long_description = description
 
-setup(name='DonkeySimple',
+setup(name='GrabLib',
     version = '0.01',
     description = description,
     long_description = long_description,

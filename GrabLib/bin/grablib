@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import sys, os, traceback
-sys.path.append('/home/samuel/Dropbox/dev/eclipse_workspace_ub/GrabLib/grab-lib.git')
 try:
     import GrabLib
 except ImportError:
