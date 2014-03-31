@@ -54,8 +54,9 @@ try:
         
     dfunc(args.def_path, 
           args.target, 
-          overwrite=args.overwrite, 
-          verbosity=args.verbosity)
+          overwrite = args.overwrite, 
+          verbosity = args.verbosity,
+          file_permissions = args.file_permissions)
 except GrabLib.KnownError, e:
     print '===================\nError: %s' % str(e)
 except Exception, e:

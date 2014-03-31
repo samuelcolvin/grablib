@@ -27,9 +27,14 @@ def download_json_path(json_path, target = None, overwrite = None, verbosity = N
                 options[k] = v
     else:
         libs_info = jcontent
-    return _overwrite_options_download(libs_info, options, target, overwrite, verbosity, file_permissions, output)
+    return _overwrite_options_download(libs_info, 
+                                       options, target, 
+                                       overwrite, 
+                                       file_permissions = file_permissions, 
+                                       verbosity = verbosity, 
+                                       output = output)
 
-def download_python_path(python_fpath, target = None, overwrite = None, verbosity = None, file_permissions = None, output = None):
+def download_python_path(python_fpath, target = None, overwrite = None, file_permissions = None, verbosity = None, output = None):
     try:
         imp.load_source('GrabSettings', python_fpath)
         import GrabSettings
