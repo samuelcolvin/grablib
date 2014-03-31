@@ -21,7 +21,6 @@ setup(name='GrabLib',
     author_email = 'S@muelColvin.com',
     url = 'https://github.com/samuelcolvin/GrabLib',
     packages = ['GrabLib'],
-    zip_safe = False,
     platforms = 'any',
     scripts = ['GrabLib/bin/grablib']
 )
