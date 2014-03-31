@@ -13,3 +13,7 @@ The formats define the sames things, the following values can be set:
 * [OPTIONAL] file_permissions: explitly set files permissions
 
 All options settings can also be overwritten at the command line, in python format or using the API a special output function may also be defined.
+
+### TODO
+
+* add javascript/css concatination and compression
