@@ -66,8 +66,8 @@ class DownloadLibs(object):
             def_path_string: dict, either url: destination or zip url: dict of regex: destination, see docs
             target: string, root folder to put files in
             overwrite: bool, whether or not to overwrite files that already exist, default is not to download existing
-            verbosity: int, what to print 0 (nothing except errors), 1 (less), 2 (normal), 3 (everything)
-            file_perm: int or None, if not None permissions to give downloaded files eg. 0666
+            verbosity: int, what to print 0 (nothing except errors), 1 (less), 2 (default), 3 (everything)
+            file_permissions: int or None, if not None permissions to give downloaded files eg. 0666
             output: function or None, if not None alternative function to recieve output statements.
         """
         self.libs_info = libs_info
