@@ -7,7 +7,7 @@ Definition files can either be JSON or Python (see `/examples`). So the versions
 
 The formats define the sames things, the following values can be set:
 * Libs: a dictionary of files to download and locations to put them, zip files may also be defined with multiple files extracted to different locations.
-* [OPTIONAL] Target: the location to put the files, if not defined this has to be specifiled in the command line.
+* [OPTIONAL] Target: the location to put the files, defaults to the working directory.
 * [OPTIONAL] Verbosity: Level 0 (nothing except errors), 1 (less),  2 (default), 3 (everything)
 * [OPTIONAL] Overwrite: bool, whether or not to overwrite files that already exist, default is not to download existing
 * [OPTIONAL] file_permissions: explitly set files permissions

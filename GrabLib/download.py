@@ -7,7 +7,7 @@ except ImportError:
     import json
 DEFAULT_VERBOSITY = 2
 DEFAULTS = {
-    'target': None, 
+    'target': '.', 
     'verbosity': DEFAULT_VERBOSITY,
     'overwrite': False,
     'file_permissions': None,
