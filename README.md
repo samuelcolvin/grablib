@@ -16,4 +16,6 @@ All options settings can also be overwritten at the command line, in python form
 
 ### TODO
 
+* dry-run mode where links are check, zip files are opened but files are not actually put into place
+* try out coloured term with https://pypi.python.org/pypi/colorterm
 * add javascript/css concatination and compression
