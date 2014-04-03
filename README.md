@@ -22,3 +22,4 @@ All options settings can also be overwritten at the command line, in python form
 * add note on target at the beginning
 * decode json to an OrderedDict to maintain download order
 * add javascript/css concatination and compression
+* add domain options so "http://github..." is written once
