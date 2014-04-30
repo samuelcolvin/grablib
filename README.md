@@ -24,3 +24,4 @@ All options settings can also be overwritten at the command line, in python form
 * decode json to an OrderedDict to maintain download order
 * add javascript/css concatination and compression
 * add domain options so "http://github..." is written once
+* give better error if JSON can't be read
