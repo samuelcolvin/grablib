@@ -17,3 +17,4 @@ All options settings can also be overwritten at the command line, in python form
 ### TODO
 
 * add javascript/css concatination and compression
+* add pretty colours to prompt output
