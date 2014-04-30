@@ -17,4 +17,10 @@ All options settings can also be overwritten at the command line, in python form
 ### TODO
 
 * add javascript/css concatination and compression
-* add pretty colours to prompt output
+* dry-run mode where links are check, zip files are opened but files are not actually put into place
+* try out coloured term with https://pypi.python.org/pypi/colorterm
+* add example of getting local file with file:///home/samuel/...
+* add note on target at the beginning
+* decode json to an OrderedDict to maintain download order
+* add javascript/css concatination and compression
+* add domain options so "http://github..." is written once
