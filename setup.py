@@ -4,7 +4,7 @@ import os, re
 
 from setuptools import setup
 
-description = 'Utility for defining and downloading your projects external library files'
+description = "Utility for defining then downloading, concatenating and minifying your project's external library files"
 docs_file = 'GrabLib/docs.txt'
 try:
     long_description = open(docs_file, 'r').read()
@@ -13,7 +13,7 @@ except IOError:
     long_description = description
 
 setup(name='GrabLib',
-    version = '0.03',
+    version = '0.03.01',
     description = description,
     long_description = long_description,
     author = 'Samuel Colvin',
