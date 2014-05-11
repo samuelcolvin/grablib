@@ -33,4 +33,10 @@ parser.add_argument('def_path', metavar='json_or_python_path',
     help='path to JSON or Python File defining libs')
     
 args = parser.parse_args()
-GrabLib.process_args(args)
+options = GrabLib.DEFAULTS
+arg_options = {'libs_root': args.libs_root, 
+               'overwrite': args.overwrite, 
+               'verbosity': args.verbosity, 
+               'file_permissions': args.file_permissions}
+options.update(arg_options)
+GrabLib.process_file(options)

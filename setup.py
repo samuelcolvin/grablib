@@ -13,7 +13,7 @@ except IOError:
     long_description = description
 
 setup(name='GrabLib',
-    version = '0.02',
+    version = '0.03',
     description = description,
     long_description = long_description,
     author = 'Samuel Colvin',
@@ -25,6 +25,7 @@ setup(name='GrabLib',
     scripts = ['GrabLib/bin/grablib'],
     install_requires=[
         'termcolor>=1.1.0',
-        'six>=1.6.1'
+        'six>=1.6.1',
+        'slimit>=0.8.1'
     ],
 )
