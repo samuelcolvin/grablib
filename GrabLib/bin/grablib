@@ -17,8 +17,8 @@ All optional arguments can also be set in the definition file.
 
 """ % GrabLib.__version__, formatter_class=argparse.RawTextHelpFormatter)
 
-parser.add_argument('-t', '--target', action='store',
-    help='Download location, omit to use value from definition file.')
+parser.add_argument('-p', '--libs_root', action='store',
+    help='Download path root, omit to use value from definition file.')
 
 parser.add_argument('-w', '--overwrite', action='store', 
     help = 'Overwrite existing files, default is not to download a library if the file already exists')

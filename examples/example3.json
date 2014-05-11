@@ -1,8 +1,28 @@
 {
-  "target": "example3_statics",
+  "libs_root": "example3_statics",
   "overwrite": true,
+  "sites":
+  {
+  	"github": "https://raw.githubusercontent.com",
+  	"typeahead": "{{ github }}/twitter/typeahead.js/v0.10.2/dist"
+  },
   "libs":
   {
-    "https://raw.github.com/CreateJS/EaselJS/release_v0.7.1/lib/easeljs-0.7.1.min.js": "easeljs.min.js"
-  }
+    "{{ typeahead }}/typeahead.jquery.js": "js/ta_raw/{{ filename }}",
+    "{{ typeahead }}/typeahead.jquery.min.js": "js/{{ filename }}",
+    "{{ typeahead }}/bloodhound.js": "js/ta_raw/{{ filename }}",
+    "{{ typeahead }}/bloodhound.min.js": "js/{{ filename }}",
+    "{{ github }}/CreateJS/EaselJS/release_v0.7.1/lib/easeljs-0.7.1.min.js": "easeljs.min.js",
+    "{{ github }}/twbs/bootstrap/v3.1.1/dist/css/bootstrap.min.css": "{{ filename }}",
+    "{{ github }}/twbs/bootstrap/v3.1.1/dist/js/bootstrap.min.js": "{{ filename }}"
+  },
+  "libs_root_min": "example3_statics_min",
+  "slim":
+  [
+  	{
+  		"options": ["slim", "mangle"],
+  		"input": ".*/ta_raw/.*",
+  		"output": "typeahead_combined.min.js" 
+  	}
+  ]
 }

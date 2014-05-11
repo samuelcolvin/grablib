@@ -1,4 +1,4 @@
-import os, json, zipfile, re, traceback, imp, requests, six
+import os, sys, json, zipfile, re, traceback, imp, requests, six, collections
 if six.PY3:
     from io import BytesIO as IO
 else:
@@ -18,11 +18,12 @@ colour_lookup = {0: ('red',),
 
 DEFAULT_VERBOSITY = 2
 DEFAULTS = {
-    'target': '.', 
+    'libs_root': '.', 
     'verbosity': DEFAULT_VERBOSITY,
     'overwrite': False,
     'file_permissions': None,
     'output': None,
+    'sites': None
 }
 
 class KnownError(Exception):
@@ -49,17 +50,18 @@ def process_args(args):
 
         libs_info, options = dfunc(args.def_path)
         
-        options = overwrite_options(options, {'target': args.target, 
+        options = overwrite_options(options, {'libs_root': args.libs_root, 
                                               'overwrite': args.overwrite, 
                                               'verbosity': args.verbosity, 
                                               'file_permissions': args.file_permissions, 
+                                              'sites': None,
                                               'output': None})
 
         return DownloadLibs(libs_info, **options).download()
     except KnownError as e:
-        print('===================\nError: %s' % str(e))
+        cprint('===================\nError: %s' % str(e), 'red', attrs=['bold'], file=sys.stderr)
     except Exception as e:
-        print('Error: %s' % str(e))
+        cprint('Error: %s' % str(e), 'red', attrs=['bold'], file=sys.stderr)
         traceback.print_exc()
     return False
 
@@ -67,7 +69,12 @@ def process_json_path(json_path):
     """
     Takes the path of a json file and extracts libs_info and options
     """ 
-    jcontent = json.load(open(json_path, 'r'))
+    f = open(json_path, 'r')
+    try:
+        jcontent = json.load(f, object_pairs_hook=collections.OrderedDict)
+    except Exception as e:
+        raise KnownError('Error Processing JSON: %s' % str(e))
+    f.close()
     options = {k:v for k,v in list(DEFAULTS.items())}
     if 'libs' in jcontent:
         libs_info = jcontent['libs']
@@ -91,7 +98,8 @@ def process_python_path(python_fpath):
     for name in list(DEFAULTS.keys()):
         if hasattr(GrabSettings, name):
             options[name] = getattr(GrabSettings, name)
-    return GrabSettings.libs, options
+    libs_info = collections.OrderedDict(GrabSettings.libs)
+    return libs_info, options
     
     
 def overwrite_options(options, overwrite_options):
@@ -99,29 +107,41 @@ def overwrite_options(options, overwrite_options):
     Overwrite options (from settings file) with overwrite_options (typically from command line)
     """
     for attr in list(options.keys()):
-        if overwrite_options[attr] is overwrite_options:
+        if overwrite_options[attr] is not None:
             options[attr] = overwrite_options[attr]
-    if options['target'] is None:
-        raise KnownError('target argument was None and target not defined in definition file')
+    if options['libs_root'] is None:
+        raise KnownError('libs_root argument was None and libs_root not defined in definition file')
     return options
             
 class DownloadLibs(object):
     """
     main class for downloading library files based on json file.
     """
-    def __init__(self, libs_info, target, overwrite=False, verbosity = DEFAULT_VERBOSITY, file_permissions = None, output = None):
+    def __init__(self, libs_info, libs_root, 
+                 overwrite=False, 
+                 verbosity = DEFAULT_VERBOSITY, 
+                 file_permissions = None, 
+                 sites = None,
+                 output = None):
         """
         initialize DownloadLibs.
         Args:
             def_path_string: dict, either url: destination or zip url: dict of regex: destination, see docs
-            target: string, root folder to put files in
+            
+            libs_root: string, root folder to put files in
+            
             overwrite: bool, whether or not to overwrite files that already exist, default is not to download existing
+            
             verbosity: int, what to print 0 (nothing except errors), 1 (less), 2 (default), 3 (everything)
+            
             file_permissions: int or None, if not None permissions to give downloaded files eg. 0666
+            
+            sites: dict of names of sites to simplify similar urls, see examples.
+            
             output: function or None, if not None alternative function to recieve output statements.
         """
         self.libs_info = libs_info
-        self.target = target
+        self.libs_root = libs_root
         self.overwrite = overwrite
         self.verbosity = verbosity
         if output:
@@ -133,6 +153,7 @@ class DownloadLibs(object):
         if verbosity != DEFAULTS['verbosity']:
             self.output('Verbosity set to %d' % verbosity)
         self.file_perm = file_permissions
+        self.sites = self._setup_sites(sites)
         
     def __call__(self):
         """
@@ -145,11 +166,13 @@ class DownloadLibs(object):
         perform download and save.
         """
         self.output('', 3)
+        self.output('Downloading files to: %s' % self.libs_root, 1)
         self.downloaded = 0
         self.ignored = 0
-        for url, value in list(self.libs_info.items()):
+        for url_base, value in list(self.libs_info.items()):
+            url = self._setup_url(url_base)
             try:
-                if type(value) == dict:
+                if isinstance(value, dict):
                     success = self._process_zip(url, value)
                 else:
                     success = self._process_normal_file(url, value)
@@ -161,7 +184,7 @@ class DownloadLibs(object):
                 if not isinstance(e, KnownError):
                     self.output(traceback.format_exc(), 0)
                 return False
-        self.output('library download finished: %d files downloaded, %d existing and ignored' % (self.downloaded, self.ignored), 1)
+        self.output('Library download finished: %d files downloaded, %d existing and ignored' % (self.downloaded, self.ignored), 1)
         return True
         
     def _process_normal_file(self, url, dst):
@@ -169,7 +192,7 @@ class DownloadLibs(object):
         if not path_is_valid:
             self.output('URL "%s" is not valid, not downloading' % url)
             return False
-        exists, dest = self._generate_path(self.target, path)
+        exists, dest = self._generate_path(self.libs_root, path)
         if exists and not self.overwrite:
             self.output('file already exists: "%s"' % path, 3)
             self.output('  *** IGNORING THIS DOWNLOAD ***\n', 3)
@@ -186,9 +209,9 @@ class DownloadLibs(object):
     def _process_zip(self, url, value):
         self.output('dict value found, assuming "%s" is a zip file' % url, 3)
         zip_paths = [os.path.dirname(
-                     os.path.join(self.target, p))
+                     os.path.join(self.libs_root, p))
                      for p in list(value.values())]
-        zip_paths_exist = [os.path.exists(p) and p != self.target
+        zip_paths_exist = [os.path.exists(p) and p != self.libs_root
                            for p in zip_paths]
         if all(zip_paths_exist) and not self.overwrite:
             self.output('all paths already exist for zip extraction', 3)
@@ -206,15 +229,15 @@ class DownloadLibs(object):
                     path_is_valid, new_path = self._get_new_path(fn, dest_path, regex = regex)
                     if not path_is_valid:
                         continue
-                    _, dest = self._generate_path(self.target, new_path)
+                    _, dest = self._generate_path(self.libs_root, new_path)
                     self._write(dest, zipf.read(fn))
                     zcopied += 1
                     break
-        self.output('%d files copied from zip archive to target' % zcopied, colourv = 3)
+        self.output('%d files copied from zip archive to libs_root' % zcopied, colourv = 3)
         self.output('', 3)
         return True
     
-    def _get_new_path(self, src_path, target, regex = '.*/(.*)'):
+    def _get_new_path(self, src_path, libs_root, regex = '.*/(.*)'):
         """
         check url complies with regex and generate new filename
         """
@@ -225,8 +248,30 @@ class DownloadLibs(object):
             new_fn = m.groupdict()['filename']
         else:
             new_fn = m.groups()[0]
-        return True, re.sub('{{ *filename *}}', new_fn, target)
+        return True, re.sub('{{ *filename *}}', new_fn, libs_root)
+    
+    def _setup_sites(self, sites):
+        if sites is None:
+            return None
+        if not isinstance(sites, dict):
+            raise KnownError('sites is not a dict: %r' % sites)
+        # blunt way of making sure all sites in sites are replaced
+        # with luck 5 files sound be enough!
+        for _ in range(5):
+            for k in sites:
+                sites[k] = self._replace_all(sites[k], sites)
+        return sites
+    
+    def _setup_url(self, url_base):
+        if self.sites is None:
+            return url_base
+        else:
+            return self._replace_all(url_base, self.sites)
         
+    def _replace_all(self, base, context):
+        for lookup, replace in context.items():
+            base = re.sub('{{ *%s *}}' % lookup, replace, base)
+        return base
 
     def _generate_path(self, *path_args):
         dest = os.path.join(*path_args)
