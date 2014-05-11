@@ -1,2 +1,2 @@
-from download import KnownError, DEFAULT_VERBOSITY, DownloadLibs, download_json_path, download_python_path
+from .download import KnownError, DownloadLibs, process_args
 __version__ = 'v0.02'

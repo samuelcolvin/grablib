@@ -22,5 +22,9 @@ setup(name='GrabLib',
     url = 'https://github.com/samuelcolvin/GrabLib',
     packages = ['GrabLib'],
     platforms = 'any',
-    scripts = ['GrabLib/bin/grablib']
+    scripts = ['GrabLib/bin/grablib'],
+    install_requires=[
+        'termcolor>=1.1.0',
+        'six>=1.6.1'
+    ],
 )

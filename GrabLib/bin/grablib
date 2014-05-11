@@ -4,7 +4,7 @@ sys.path.append('/home/samuel/Dropbox/dev/eclipse_workspace_ub/GrabLib/grab-lib.
 try:
     import GrabLib
 except ImportError:
-    print 'Problem importing GrabLib, make sure it is installed and in the Python Path'
+    print('Problem importing GrabLib, make sure it is installed and in the Python Path')
     sys.exit() 
     
 import argparse
@@ -33,32 +33,5 @@ parser.add_argument('-v', '--verbosity', action='store',
 parser.add_argument('def_path', metavar='json_or_python_path',
     help='path to JSON or Python File defining libs')
     
-try:
-    args = parser.parse_args()
-    if args.verbosity is not None:
-        try:
-            args.verbosity = int(args.verbosity)
-        except Exception:
-            raise GrabLib.KnownError('problem converting verbosity to int, value: "%s" is not an integer'\
-                                      % args.verbosity)
-    
-    if not os.path.exists(args.def_path):
-        raise GrabLib.KnownError('Libs definition file not found: %s' % args.def_path)
-    path_lower = args.def_path.lower()
-    if not any([path_lower.endswith(ext) for ext in ('.py', '.json')]):
-        raise GrabLib.KnownError('Libs definition file does not have extension .py or .json: %s' % args.def_path)
-    if path_lower.endswith('.py'):
-        dfunc = GrabLib.download_python_path
-    else:
-        dfunc = GrabLib.download_json_path
-        
-    dfunc(args.def_path, 
-          args.target, 
-          overwrite = args.overwrite, 
-          verbosity = args.verbosity,
-          file_permissions = args.file_permissions)
-except GrabLib.KnownError, e:
-    print '===================\nError: %s' % str(e)
-except Exception, e:
-    print 'Error: %s' % str(e)
-    traceback.print_exc()
+args = parser.parse_args()
+GrabLib.process_args(args)
