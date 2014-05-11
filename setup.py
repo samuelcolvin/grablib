@@ -24,8 +24,10 @@ setup(name='GrabLib',
     platforms = 'any',
     scripts = ['GrabLib/bin/grablib'],
     install_requires=[
+        'requests>=2.2.1',
         'termcolor>=1.1.0',
         'six>=1.6.1',
-        'slimit>=0.8.1'
+        'slimit>=0.8.1',
+        'argparse>=1.2.1'
     ],
 )

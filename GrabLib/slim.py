@@ -56,6 +56,9 @@ class SlimLibs(ProcessBase):
 
     def _test_minify(self, content, sets):
         if 'js_slim' in sets['options']:
+            if not SLIM_OK:
+                self.output('Slimit (https://github.com/rspivak/slimit) not available, not minifying!', 0)
+                return content
             mangle = 'js_mangle' in sets['options']
             mangle_toplevel = 'js_mangle_toplevel' in sets['options']
             content = minify(content, mangle = mangle, mangle_toplevel = mangle_toplevel)

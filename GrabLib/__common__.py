@@ -49,7 +49,7 @@ class ProcessBase(object):
             
             overwrite: bool, whether or not to overwrite files that already exist, default is not to download existing
             
-            verbosity: int, what to print 0 (nothing except errors), 1 (less), 2 (default), 3 (everything)
+            verbosity: int, what to print
             
             file_permissions: int or None, if not None permissions to give downloaded files eg. 0666
             

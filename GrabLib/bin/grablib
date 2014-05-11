@@ -30,7 +30,7 @@ parser.add_argument('-p', '--file_permissions', action='store',
     help = 'Explicitly set file permission for each file downloaded, eg. 666')
 
 parser.add_argument('-v', '--verbosity', action='store',
-    help = 'Verbosity Level 0 (nothing except errors), 1 (less), 2 (default), 3 (everything)')
+    help = 'Verbosity Level 0 (nothing except errors), 1 (a little), 2 (default), 3 (everything)')
 
 parser.add_argument('def_path', metavar='json_or_python_path',
     help='path to JSON or Python File defining libs')
