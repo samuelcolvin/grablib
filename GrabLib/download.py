@@ -9,7 +9,7 @@ class DownloadLibs(ProcessBase):
     """
     main class for downloading library files based on json file.
     """
-    def __init__(self, libs_info, libs_root, sites = None, **kw):
+    def __init__(self, libs_info, sites = None, **kw):
         """
         initialize DownloadLibs.
         Args:
@@ -17,7 +17,7 @@ class DownloadLibs(ProcessBase):
             
             sites: dict of names of sites to simplify similar urls, see examples.
         """
-        super(DownloadLibs, self).__init__(libs_root, **kw)
+        super(DownloadLibs, self).__init__(**kw)
         self.libs_info = libs_info
         self.sites = self._setup_sites(sites)
         
@@ -88,33 +88,15 @@ class DownloadLibs(ProcessBase):
         content = self._get_url(url)
         zipinmemory = IO(content)
         with zipfile.ZipFile(zipinmemory) as zipf:
+            def save_file(filename, new_path, dest_path):
+                _, dest = self._generate_path(self.libs_root, new_path)
+                self._write(dest, zipf.read(filename))
+                
             self.output('%d file in zip archive' % len(zipf.namelist()), colourv = 3)
-            zcopied = 0
-            for fn in zipf.namelist():
-                for regex, dest_path in list(value.items()):
-                    path_is_valid, new_path = self._get_new_path(fn, dest_path, regex = regex)
-                    if not path_is_valid:
-                        continue
-                    _, dest = self._generate_path(self.libs_root, new_path)
-                    self._write(dest, zipf.read(fn))
-                    zcopied += 1
-                    break
+            zcopied = self._search_paths(zipf.namelist(), value.items(), save_file)
         self.output('%d files copied from zip archive to libs_root' % zcopied, colourv = 3)
         self.output('', 3)
         return True
-    
-    def _get_new_path(self, src_path, libs_root, regex = '.*/(.*)'):
-        """
-        check url complies with regex and generate new filename
-        """
-        m = re.search(regex, src_path)
-        if not m:
-            return False, None
-        if 'filename' in m.groupdict():
-            new_fn = m.groupdict()['filename']
-        else:
-            new_fn = m.groups()[0]
-        return True, re.sub('{{ *filename *}}', new_fn, libs_root)
     
     def _setup_sites(self, sites):
         if sites is None:

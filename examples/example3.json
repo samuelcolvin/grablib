@@ -18,11 +18,11 @@
   },
   "libs_root_slim": "example3_statics_min",
   "slim":
-  [
-  	{
-  		"options": ["slim", "mangle"],
-  		"input": ".*/ta_raw/.*",
-  		"output": "typeahead_combined.min.js" 
-  	}
-  ]
+  {
+	"typeahead_combined.min.js":
+	{
+		"options": ["js_slim", "js_mangle"],
+		"regex": ".*/ta_raw/.*"
+	}
+  }
 }

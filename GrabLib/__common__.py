@@ -15,14 +15,13 @@ colour_lookup = {0: ('red',),
 
 DEFAULT_VERBOSITY = 2
 DEFAULTS = {
-    'libs_root': '.', 
+    'libs_root': '.',
+    'libs_root_slim': None,
     'verbosity': DEFAULT_VERBOSITY,
     'overwrite': False,
     'file_permissions': None,
     'output': None,
-    'sites': None,
-    'libs_root_slim': None,
-    'slim': None
+    'sites': None
 }
 
 class KnownError(Exception):
@@ -37,10 +36,12 @@ class ProcessBase(object):
     """
     def __init__(self,
                  libs_root, 
+                 libs_root_slim,
                  overwrite=False, 
                  verbosity = DEFAULT_VERBOSITY, 
                  file_permissions = None, 
-                 output = None):
+                 output = None, 
+                 **kw):
         """
         initialize DownloadLibs.
         Args:
@@ -55,6 +56,7 @@ class ProcessBase(object):
             output: function or None, if not None alternative function to recieve output statements.
         """
         self.libs_root = libs_root
+        self.libs_root_slim = libs_root_slim
         self.overwrite = overwrite
         self.verbosity = verbosity
         if output:
@@ -66,6 +68,34 @@ class ProcessBase(object):
         if verbosity != DEFAULTS['verbosity']:
             self.output('Verbosity set to %d' % verbosity)
         self.file_perm = file_permissions
+    
+    def _search_paths(self, namelist, regex_dests, on_find):
+        copied = 0
+        for fn in namelist:
+            for regex, dest_path in regex_dests:
+                path_is_valid, new_path = self._get_new_path(fn, dest_path, regex = regex)
+                if not path_is_valid:
+                    continue
+                on_find(fn, new_path, dest_path)
+                copied += 1
+                break
+        return copied
+    
+    def _get_new_path(self, src_path, dest, regex = '.*/(.*)'):
+        """
+        check src_path complies with regex and generate new filename
+        """
+        m = re.search(regex, src_path)
+        if not m:
+            return False, None
+        new_fn = None
+        if 'filename' in m.groupdict():
+            new_fn = m.groupdict()['filename']
+        elif len(m.groups()) > 0:
+            new_fn = m.groups()[0]
+        if new_fn:
+            dest = re.sub('{{ *filename *}}', new_fn, dest)
+        return True, dest
 
     def _generate_path(self, *path_args):
         dest = os.path.join(*path_args)
