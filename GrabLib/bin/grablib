@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import sys
+sys.path.append('../..')
 try:
     import GrabLib
 except ImportError:
@@ -43,4 +44,4 @@ arg_options = {'libs_root': args.libs_root,
                'verbosity': args.verbosity, 
                'file_permissions': args.file_permissions}
 options.update(arg_options)
-GrabLib.process_file(options)
+GrabLib.process_file(args.def_path, options)
