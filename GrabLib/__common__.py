@@ -24,6 +24,8 @@ DEFAULTS = {
     'sites': None
 }
 
+EMPTY_OPTIONS = {k: None for k in DEFAULTS.keys()}
+
 class KnownError(Exception):
     """
     Exception used when the error is clear so no traceback is required.

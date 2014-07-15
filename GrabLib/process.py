@@ -1,9 +1,9 @@
 import os, sys, traceback, imp, json, collections
-from .__common__ import KnownError, cprint, DEFAULTS
+from .__common__ import KnownError, cprint, DEFAULTS, EMPTY_OPTIONS
 from . import download, slim
 
 def process_file(file_path, overwrite_options = None):
-    overwrite_options = overwrite_options if (overwrite_options is not None) else DEFAULTS
+    overwrite_options = overwrite_options if (overwrite_options is not None) else EMPTY_OPTIONS
     try:
         if overwrite_options['verbosity'] is not None:
             try:

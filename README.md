@@ -34,7 +34,7 @@ You can also call GrabLib from inside python:
 
     # or with options overridden
 
-    op_overide = GrabLib.DEFAULTS
+    op_overide = GrabLib.EMPTY_OPTIONS
     op_overide['verbosity'] = 3
     GrabLib.process_file('path/to/definitions.json|py', op_overide)
 

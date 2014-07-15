@@ -13,7 +13,7 @@ except IOError:
     long_description = description
 
 setup(name='GrabLib',
-    version = '0.04',
+    version = '0.05',
     description = description,
     long_description = long_description,
     author = 'Samuel Colvin',
