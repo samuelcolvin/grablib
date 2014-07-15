@@ -2,7 +2,8 @@ import os, sys, traceback, imp, json, collections
 from .__common__ import KnownError, cprint, DEFAULTS
 from . import download, slim
 
-def process_file(file_path, overwrite_options):
+def process_file(file_path, overwrite_options = None):
+    overwrite_options = overwrite_options if (overwrite_options is not None) else DEFAULTS
     try:
         if overwrite_options['verbosity'] is not None:
             try:
@@ -18,7 +19,7 @@ def process_file(file_path, overwrite_options):
         if not any([path_lower.endswith(ext) for ext in ('.py', '.json')]):
             raise KnownError('Libs definition file does not have extension .py or .json: %s' % file_path)
         
-        dfunc = (process_json_path, process_python_path)[path_lower.endswith('.py')]
+        dfunc = process_python_path if path_lower.endswith('.py') else process_json_path
         libs_info, slim_info, options = dfunc(file_path)
         options = overwrite_options_update(options, overwrite_options)
         
