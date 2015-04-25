@@ -2,7 +2,7 @@
 import sys
 
 try:
-    import GrabLib
+    import grablib
 except ImportError:
     print('Problem importing GrabLib, make sure it is installed and in the Python Path')
     sys.exit() 

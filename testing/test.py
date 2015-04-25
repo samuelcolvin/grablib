@@ -2,7 +2,7 @@
 import sys, os
 sys.path.append('..')
 import GrabLib
-        
+
 def test_file(path):
     print('\n\n### Testing %s:\n' % path)
     options = GrabLib.DEFAULTS
