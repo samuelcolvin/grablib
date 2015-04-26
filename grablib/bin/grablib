@@ -1,47 +1,5 @@
 #!/usr/bin/python
-import sys
+import grablib
 
-try:
-    import grablib
-except ImportError:
-    print('Problem importing GrabLib, make sure it is installed and in the Python Path')
-    sys.exit() 
-    
-import argparse
-
-parser = argparse.ArgumentParser(description="""GrabLib
-
-Utility for defining then downloading, concatenating and minifying your projects external library files eg. Javascript, CSS.
-GrabLib Version: %s
-(https://github.com/samuelcolvin/GrabLib).
-All optional arguments can also be set in the definition file.
-
-""" % GrabLib.__version__, formatter_class=argparse.RawTextHelpFormatter)
-
-parser.add_argument('-t', '--libs_root', action='store',
-    help='Root directory to put downloaded files in, defaults to the working directory.')
-
-parser.add_argument('-s', '--libs_root_slim', action='store',
-    help='Root directory to put slimmed files in, defaults to libs_root.')
-
-parser.add_argument('-w', '--overwrite', action='store', 
-    help = 'Overwrite existing files, default is not to download a library if the file already exists')
-
-parser.add_argument('-p', '--file_permissions', action='store', 
-    help = 'Explicitly set file permission for each file downloaded, eg. 666')
-
-parser.add_argument('-v', '--verbosity', action='store',
-    help = 'Verbosity Level 0 (nothing except errors), 1 (a little), 2 (default), 3 (everything)')
-
-parser.add_argument('def_path', metavar='json_or_python_path',
-    help='path to JSON or Python File defining libs')
-    
-args = parser.parse_args()
-options = GrabLib.DEFAULTS
-arg_options = {'libs_root': args.libs_root, 
-               'libs_root_slim': args.libs_root_slim, 
-               'overwrite': args.overwrite, 
-               'verbosity': args.verbosity, 
-               'file_permissions': args.file_permissions}
-options.update(arg_options)
-GrabLib.process_file(args.def_path, options)
+if __name__ == '__main__':
+    grablib.parse_cmd_arguments()

@@ -1,15 +1,24 @@
-import os, zipfile, re, traceback, requests, six
-if six.PY3:
-    from io import BytesIO as IO
-else:
+import os
+import zipfile
+import re
+import traceback
+
+import requests
+
+try:
     from cStringIO import StringIO as IO
-from .__common__ import DEFAULT_VERBOSITY, cprint, colour_lookup, KnownError, DEFAULTS, ProcessBase
-            
+except ImportError:
+    from io import StringIO as IO
+
+from .common import GrabLibError, ProcessBase
+
+
 class DownloadLibs(ProcessBase):
     """
     main class for downloading library files based on json file.
     """
-    def __init__(self, libs_info, sites = None, **kw):
+
+    def __init__(self, libs_info, sites=None, **kw):
         """
         initialize DownloadLibs.
         Args:
@@ -20,13 +29,13 @@ class DownloadLibs(ProcessBase):
         super(DownloadLibs, self).__init__(**kw)
         self.libs_info = libs_info
         self.sites = self._setup_sites(sites)
-        
+
     def __call__(self):
         """
         alias to download
         """
         return self.download()
-        
+
     def download(self):
         """
         perform download and save.
@@ -47,12 +56,14 @@ class DownloadLibs(ProcessBase):
             except Exception as e:
                 self.output('Error Downloading "%s" to "%s"' % (url, value), 0)
                 self.output('ERROR: %s' % str(e), 0)
-                if not isinstance(e, KnownError):
+                if not isinstance(e, GrabLibError):
                     self.output(traceback.format_exc(), 0)
                 return False
-        self.output('Library download finished: %d files downloaded, %d existing and ignored' % (self.downloaded, self.ignored), 1)
+        self.output(
+            'Library download finished: %d files downloaded, %d existing and ignored' % (self.downloaded, self.ignored),
+            1)
         return True
-        
+
     def _process_normal_file(self, url, dst):
         path_is_valid, path = self._get_new_path(url, dst)
         if not path_is_valid:
@@ -66,16 +77,18 @@ class DownloadLibs(ProcessBase):
             return False
         self.output('DOWNLOADING: %s' % path)
         content = self._get_url(url)
-        try: content = content.encode('utf8')
-        except: pass
+        try:
+            content = content.encode('utf8')
+        except UnicodeDecodeError:
+            pass
         self._write(dest, content)
         self.output('Successfully downloaded %s\n' % os.path.basename(path), 3)
         return True
-    
+
     def _process_zip(self, url, value):
         self.output('dict value found, assuming "%s" is a zip file' % url, 3)
         zip_paths = [os.path.dirname(
-                     os.path.join(self.libs_root, p))
+            os.path.join(self.libs_root, p))
                      for p in list(value.values())]
         zip_paths_exist = [os.path.exists(p) and p != self.libs_root
                            for p in zip_paths]
@@ -91,36 +104,36 @@ class DownloadLibs(ProcessBase):
             def save_file(filename, new_path, dest_path):
                 _, dest = self._generate_path(self.libs_root, new_path)
                 self._write(dest, zipf.read(filename))
-                
-            self.output('%d file in zip archive' % len(zipf.namelist()), colourv = 3)
+
+            self.output('%d file in zip archive' % len(zipf.namelist()), colourv=3)
             zcopied = self._search_paths(zipf.namelist(), value.items(), save_file)
-        self.output('%d files copied from zip archive to libs_root' % zcopied, colourv = 3)
+        self.output('%d files copied from zip archive to libs_root' % zcopied, colourv=3)
         self.output('', 3)
         return True
-    
+
     def _setup_sites(self, sites):
         if sites is None:
             return None
         if not isinstance(sites, dict):
-            raise KnownError('sites is not a dict: %r' % sites)
+            raise GrabLibError('sites is not a dict: %r' % sites)
         # blunt way of making sure all sites in sites are replaced
         # with luck 5 files sound be enough!
         for _ in range(5):
             for k in sites:
                 sites[k] = self._replace_all(sites[k], sites)
         return sites
-    
+
     def _setup_url(self, url_base):
         if self.sites is None:
             return url_base
         else:
             return self._replace_all(url_base, self.sites)
-        
+
     def _replace_all(self, base, context):
         for lookup, replace in context.items():
             base = re.sub('{{ *%s *}}' % lookup, replace, base)
         return base
-    
+
     def _get_url(self, url):
         try:
             r = requests.get(url)
@@ -129,5 +142,4 @@ class DownloadLibs(ProcessBase):
             else:
                 return r.content
         except Exception as e:
-            raise KnownError('URL: %s\nProblem occurred during download: %r\n*** ABORTING ***' % (url, e))
-
+            raise GrabLibError('URL: %s\nProblem occurred during download: %r\n*** ABORTING ***' % (url, e))

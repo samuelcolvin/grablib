@@ -1,99 +1,110 @@
-import os, sys, traceback, imp, json, collections
-from .__common__ import KnownError, cprint, DEFAULTS, EMPTY_OPTIONS
+import os
+import sys
+import imp
+import json
+import collections
+
+from .common import GrabLibError, cprint, DEFAULT_OPTIONS
 from . import download, slim
 
-def process_file(file_path, overwrite_options = None):
-    overwrite_options = overwrite_options if (overwrite_options is not None) else EMPTY_OPTIONS
+
+def process_file(file_path='grablib.json', from_command_line=False, **options):
+    """
+    Process a file defining files to download and what to do with them.
+
+    :param file_path: relative path to file defining what to download
+    :param from_command_line: set to True to format exceptions ready for the command line
+    :param options: additional options, these override anything in file_path, eg. from terminal
+    :return: boolean, whether or not files have been downloaded
+    """
+    kwarg_options = options
     try:
-        if overwrite_options['verbosity'] is not None:
+        if options.get('verbosity') is not None:
             try:
-                overwrite_options['verbosity'] = int(overwrite_options['verbosity'])
-            except Exception:
-                raise KnownError('problem converting verbosity to int, value: "%s" is not an integer'\
-                                          % overwrite_options['verbosity'])
-        
+                options['verbosity'] = int(options['verbosity'])
+            except ValueError:
+                msg = 'problem converting verbosity to int, value: "%s" is not an integer' % options['verbosity']
+                raise GrabLibError(msg)
+
         if not os.path.exists(file_path):
-            raise KnownError('Libs definition file not found: %s' % file_path)
-        
+            raise GrabLibError('File not found: %s' % file_path)
+
         path_lower = file_path.lower()
         if not any([path_lower.endswith(ext) for ext in ('.py', '.json')]):
-            raise KnownError('Libs definition file does not have extension .py or .json: %s' % file_path)
-        
+            raise GrabLibError('Libs definition file does not have extension .py or .json: %s' % file_path)
+
         dfunc = process_python_path if path_lower.endswith('.py') else process_json_path
-        libs_info, slim_info, options = dfunc(file_path)
-        options = overwrite_options_update(options, overwrite_options)
-        
+        libs_info, slim_info, file_options = dfunc(file_path)
+
+        # explicitly set the options to use, starting from defaults, updating with file_options then key word options
+        options = DEFAULT_OPTIONS.copy()
+        options.update({k: v for k, v in file_options.items() if v is not None})
+        options.update({k: v for k, v in kwarg_options.items() if v is not None})
         if libs_info:
             if not download.DownloadLibs(libs_info, **options).download():
                 return False
         if slim_info:
             if not slim.SlimLibs(slim_info, **options).slim():
                 return False
-        return True
-        
-    except KnownError as e:
-        cprint('===================\nError: %s' % str(e), 'red', attrs=['bold'], file=sys.stderr)
-    except Exception as e:
-        cprint('Error: %s' % str(e), 'red', attrs=['bold'], file=sys.stderr)
-        traceback.print_exc()
-    return False
+
+    except GrabLibError as e:
+        if from_command_line:
+            cprint('===================\nError: %s' % str(e), 'red', attrs=['bold'],
+                   file=sys.stderr, colour_print=options.get('colour_print', True))
+            return False
+        else:
+            raise e
+    return True
+
 
 def process_json_path(json_path):
     """
     Takes the path of a json file and extracts libs_info and options
-    """ 
+    """
     f = open(json_path, 'r')
     try:
-        jcontent = json.load(f, object_pairs_hook=collections.OrderedDict)
+        content = json.load(f, object_pairs_hook=collections.OrderedDict)
     except Exception as e:
-        raise KnownError('Error Processing JSON: %s' % str(e))
+        raise GrabLibError('Error Processing JSON: %s' % str(e))
     f.close()
-    options = {k:v for k,v in list(DEFAULTS.items())}
+    options = {}
     libs_info, slim_info = None, None
-    if 'libs' in jcontent or 'slim' in jcontent:
-        if 'libs' in jcontent:
-            libs_info = jcontent['libs']
-        if 'slim' in jcontent:
-            slim_info = jcontent['slim']
-        for k, v in list(jcontent.items()):
-            if k in DEFAULTS:
+    if 'libs' in content or 'slim' in content:
+        if 'libs' in content:
+            libs_info = content['libs']
+        if 'slim' in content:
+            slim_info = content['slim']
+        for k, v in list(content.items()):
+            if k in DEFAULT_OPTIONS:
                 options[k] = v
     else:
-        libs_info = jcontent
+        libs_info = content
     return libs_info, slim_info, options
 
-def process_python_path(python_fpath):
+
+def ordered_dict(dict):
+    # make sure the order is at least consistent, we can't do better than this
+    return collections.OrderedDict(sorted(dict.items(), key=lambda d: d[0]))
+
+
+def process_python_path(python_path):
     """
     Takes the path of a python file and extracts libs_info and options
-    """ 
+    """
     try:
-        imp.load_source('GrabSettings', python_fpath)
+        imp.load_source('GrabSettings', python_path)
         import GrabSettings
     except Exception as e:
-        raise KnownError('Error importing %s: %s' % (python_fpath, str(e)))
-    options = {k:v for k,v in list(DEFAULTS.items())}
-    for name in list(DEFAULTS.keys()):
-        if hasattr(GrabSettings, name):
-            options[name] = getattr(GrabSettings, name)
+        raise GrabLibError('Error importing %s: %s' % (python_path, str(e)))
+    options = {}
+    for name in DEFAULT_OPTIONS.keys():
+        value = getattr(GrabSettings, name, None)
+        if value is not None:
+            options[name] = value
+
     libs_info, slim_info = None, None
     if hasattr(GrabSettings, 'libs'):
-        libs_info = collections.OrderedDict(GrabSettings.libs)
+        libs_info = ordered_dict(GrabSettings.libs)
     if hasattr(GrabSettings, 'slim'):
-        slim_info = collections.OrderedDict(GrabSettings.slim)
+        slim_info = ordered_dict(GrabSettings.slim)
     return libs_info, slim_info, options
-    
-    
-def overwrite_options_update(options, overwrite_options):
-    """
-    Overwrite options (from settings file) with overwrite_options (typically from command line)
-    """
-    for attr in list(options.keys()):
-        if overwrite_options[attr] is not None:
-            options[attr] = overwrite_options[attr]
-            
-    if options['libs_root'] is None:
-        raise KnownError('libs_root argument was None and libs_root not defined in definition file')
-    
-    if options['libs_root_slim'] is None:
-        options['libs_root_slim'] = options['libs_root']
-    return options

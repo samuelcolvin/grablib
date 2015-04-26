@@ -3,8 +3,8 @@
   "overwrite": true,
   "sites":
   {
-  	"github": "https://raw.githubusercontent.com",
-  	"typeahead": "{{ github }}/twitter/typeahead.js/v0.10.2/dist"
+    "github": "https://raw.githubusercontent.com",
+    "typeahead": "{{ github }}/twitter/typeahead.js/v0.10.2/dist"
   },
   "libs":
   {
@@ -19,10 +19,10 @@
   "libs_root_slim": "example3_statics_min",
   "slim":
   {
-	"typeahead_combined.min.js":
-	{
-		"options": ["js_slim", "js_mangle"],
-		"regex": ".*/ta_raw/.*"
-	}
+  "typeahead_combined.min.js":
+  {
+    "options": ["js_slim", "js_mangle"],
+    "regex": ".*/ta_raw/.*"
+  }
   }
 }
