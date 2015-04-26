@@ -4,7 +4,7 @@ import sys
 import unittest
 from requests import ConnectionError
 import shutil
-from grablib.common import GrabLibError
+from grablib.common import GrablibError
 
 try:
     from StringIO import StringIO
@@ -142,7 +142,7 @@ class CmdTest(unittest.TestCase):
         mock_requests_get.side_effect = local_requests_get
         ns = parser.parse_args(['{"http://xyz.com": "x"}', '--libs-root', 'test-download-dir', '--no-colour'])
         with GetStd() as get_std:
-            self.assertRaises(GrabLibError, parse_cmd_arguments, ns, from_command_line=False)
+            self.assertRaises(GrablibError, parse_cmd_arguments, ns, from_command_line=False)
 
     @mock.patch('requests.get')
     def test_simple_wrong_path_command_line(self, mock_requests_get):

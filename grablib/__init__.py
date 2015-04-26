@@ -5,13 +5,13 @@ import argparse
 from . import grab
 from .common import VERSION
 
-parser = argparse.ArgumentParser(description="""GrabLib
+parser = argparse.ArgumentParser(description="""grablib
 
 Utility for defining then downloading, concatenating and minifying your
 projects external library files eg. Javascript, CSS.
 
-GrabLib Version: %s
-(https://github.com/samuelcolvin/GrabLib).
+grablib Version: %s
+(https://github.com/samuelcolvin/grablib).
 All optional arguments can also be set in the definition file.
 
 """ % VERSION, formatter_class=argparse.RawTextHelpFormatter)
@@ -35,7 +35,7 @@ parser.add_argument('--no-colour', action='store_false', default=True, dest='col
                     help='Do not use color term to colourise output')
 
 parser.add_argument('lib_def', metavar='file-path-or-json', default='grablib.json', nargs='?',
-                    help='path to JSON or python file or valid JSON string')
+                    help='path to JSON or python file or valid JSON string, defaults to "grablib.json".')
 
 
 def parse_cmd_arguments(args_namespace=None, from_command_line=True):

@@ -42,7 +42,7 @@ from distutils.version import StrictVersion
 VERSION = StrictVersion('0.1')
 
 
-class GrabLibError(Exception):
+class GrablibError(Exception):
     """
     Exception used when the error is clear so no traceback is required.
     """

@@ -4,7 +4,7 @@ import imp
 import json
 import collections
 
-from .common import GrabLibError, cprint, DEFAULT_OPTIONS
+from .common import GrablibError, cprint, DEFAULT_OPTIONS
 from . import download, slim
 
 DEFAULT_FILE_PATH = 'grablib.json'
@@ -31,19 +31,19 @@ def grab(lib_def=DEFAULT_FILE_PATH, from_command_line=False, **options):
                 options['verbosity'] = int(options['verbosity'])
             except ValueError:
                 msg = 'problem converting verbosity to int, value: "%s" is not an integer' % options['verbosity']
-                raise GrabLibError(msg)
+                raise GrablibError(msg)
 
         if not os.path.exists(lib_def):
             try:
                 lib_def = json.loads(lib_def, object_pairs_hook=collections.OrderedDict)
             except ValueError:
-                raise GrabLibError('File not found or not valid JSON: %s' % lib_def)
+                raise GrablibError('File not found or not valid JSON: %s' % lib_def)
             else:
                 process_function = process_json
         else:
             path_lower = lib_def.lower()
             if not any([path_lower.endswith(ext) for ext in ('.py', '.json')]):
-                raise GrabLibError('Libs definition file does not have extension .py or .json: %s' % lib_def)
+                raise GrablibError('Libs definition file does not have extension .py or .json: %s' % lib_def)
 
             if path_lower.endswith('.py'):
                 process_function = process_python_path
@@ -65,7 +65,7 @@ def grab(lib_def=DEFAULT_FILE_PATH, from_command_line=False, **options):
             if not slim.SlimLibs(slim_info, **options).slim():
                 return False
 
-    except GrabLibError as e:
+    except GrablibError as e:
         if from_command_line:
             cprint('===================\nError: %s' % str(e), 'red', attrs=['bold'],
                    file=sys.stderr, colour_print=options.get('colour_print', True))
@@ -106,7 +106,7 @@ def process_python_path(python_path):
         imp.load_source('GrabSettings', python_path)
         import GrabSettings
     except Exception as e:
-        raise GrabLibError('Error importing %s: %s' % (python_path, str(e)))
+        raise GrablibError('Error importing %s: %s' % (python_path, str(e)))
     options = {}
     for name in DEFAULT_OPTIONS.keys():
         value = getattr(GrabSettings, name, None)

@@ -10,7 +10,7 @@ try:
 except ImportError:
     from io import BytesIO as IO
 
-from .common import GrabLibError, ProcessBase
+from .common import GrablibError, ProcessBase
 
 
 class DownloadLibs(ProcessBase):
@@ -53,9 +53,9 @@ class DownloadLibs(ProcessBase):
                     success = self._process_normal_file(url, value)
                 if success:
                     self.downloaded += 1
-            except GrabLibError as e:
+            except GrablibError as e:
                 # create new exception to show which file download went wrong for
-                raise GrabLibError('Downloading "%s" to "%s"\n    %s' % (url, value, e))
+                raise GrablibError('Downloading "%s" to "%s"\n    %s' % (url, value, e))
         self.output('Library download finished: %d files downloaded, '
                     '%d existing and ignored' % (self.downloaded, self.ignored), 1)
         return True
@@ -111,7 +111,7 @@ class DownloadLibs(ProcessBase):
         if sites is None:
             return None
         if not isinstance(sites, dict):
-            raise GrabLibError('sites is not a dict: %r' % sites)
+            raise GrablibError('sites is not a dict: %r' % sites)
         # blunt way of making sure all sites in sites are replaced
         # with luck 5 files sound be enough!
         for _ in range(5):
@@ -138,4 +138,4 @@ class DownloadLibs(ProcessBase):
             else:
                 return r.content
         except RequestException as e:
-            raise GrabLibError('URL: %s\nProblem occurred during download: %r\n*** ABORTING ***' % (url, e))
+            raise GrablibError('URL: %s\nProblem occurred during download: %r\n*** ABORTING ***' % (url, e))
