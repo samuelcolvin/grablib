@@ -78,35 +78,20 @@ class CmdTest(unittest.TestCase):
             shutil.rmtree('test-download-dir')
 
     def test_simple_wrong_path(self):
-        ns = parser.parse_args(['test_file'])
-        with GetStd() as get_std:
-            parse_cmd_arguments(ns)
-        self.assertEqual(get_std.stdout, '')
-        if sys.version_info > (3, 0):
-            self.assertEqual(get_std.stderr, '===================\n'
-                                             'Error: File not found: test_file')
-        else:
-            self.assertEqual(get_std.stderr, '\x1b[1m\x1b[31m===================\n'
-                                             'Error: File not found: test_file\x1b[0m')
-
-    def test_simple_wrong_path_no_args(self):
-        ns = parser.parse_args([])
-        with GetStd() as get_std:
-            parse_cmd_arguments(ns)
-        self.assertEqual(get_std.stdout, '')
-        if sys.version_info > (3, 0):
-            # FIXME: why is this? Is it python3 some how being clever and removing the colouring characters
-            self.assertEqual(get_std.stderr, '===================\nError: File not found: grablib.json')
-        else:
-            self.assertEqual(get_std.stderr, '\x1b[1m\x1b[31m===================\n'
-                                             'Error: File not found: grablib.json\x1b[0m')
-
-    def test_wrong_path_no_color(self):
+        # we always use no-colour to avoid issues with termcolor being clever and not applying colour strings on travis
         ns = parser.parse_args(['test_file', '--no-colour'])
         with GetStd() as get_std:
             parse_cmd_arguments(ns)
         self.assertEqual(get_std.stdout, '')
-        self.assertEqual(get_std.stderr, '===================\nError: File not found: test_file')
+        self.assertEqual(get_std.stderr, '===================\n'
+                                         'Error: File not found: test_file')
+
+    def test_simple_wrong_path_no_args(self):
+        ns = parser.parse_args(['--no-colour'])
+        with GetStd() as get_std:
+            parse_cmd_arguments(ns)
+        self.assertEqual(get_std.stdout, '')
+        self.assertEqual(get_std.stderr, '===================\nError: File not found: grablib.json')
 
     def _test_simple_case(self, ns):
         with GetStd() as get_std:
@@ -116,8 +101,8 @@ class CmdTest(unittest.TestCase):
                                          '  DOWNLOADING: jquery.min.js \n'
                                          '  DOWNLOADING: bootstrap.min.css \n'
                                          ' Library download finished: 2 files downloaded, 0 existing and ignored')
-        downloaded_files = ['jquery.min.js', 'bootstrap.min.css']
-        self.assertEqual(os.listdir('test-download-dir'), downloaded_files)
+        downloaded_files = {'jquery.min.js', 'bootstrap.min.css'}
+        self.assertEqual(set(os.listdir('test-download-dir')), downloaded_files)
         for f in downloaded_files:
             downloaded_file = os.path.join('test-download-dir', f)
             original_file = os.path.join('test_files/download_file_cache', f)
