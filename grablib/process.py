@@ -10,19 +10,20 @@ from . import download, slim
 DEFAULT_FILE_PATH = 'grablib.json'
 
 
-def process_file(file_path=DEFAULT_FILE_PATH, from_command_line=False, **options):
+def grab(lib_def=DEFAULT_FILE_PATH, from_command_line=False, **options):
     """
-    Process a file defining files to download and what to do with them.
+    Process a file or json string defining files to download and what to do with them.
 
-    :param file_path: relative path to file defining what to download
+    :param lib_def: relative path to file defining what to download or valid JSON
     :param from_command_line: set to True to format exceptions ready for the command line
     :param options: additional options, these override anything in file_path, eg. from terminal
     :return: boolean, whether or not files have been downloaded
     """
-    if not os.path.exists(file_path) and file_path == DEFAULT_FILE_PATH:
+    if not os.path.exists(lib_def) and lib_def == DEFAULT_FILE_PATH:
         # this is what happens if you just call `grablib` in the terminal and grablib.json doesn't exist
         cprint('File: "%s" doesn\'t exist, use "grablib -h" to get help' % DEFAULT_FILE_PATH, file=sys.stderr)
         return False
+
     kwarg_options = options
     try:
         if options.get('verbosity') is not None:
@@ -32,15 +33,26 @@ def process_file(file_path=DEFAULT_FILE_PATH, from_command_line=False, **options
                 msg = 'problem converting verbosity to int, value: "%s" is not an integer' % options['verbosity']
                 raise GrabLibError(msg)
 
-        if not os.path.exists(file_path):
-            raise GrabLibError('File not found: %s' % file_path)
+        if not os.path.exists(lib_def):
+            try:
+                lib_def = json.loads(lib_def, object_pairs_hook=collections.OrderedDict)
+            except ValueError:
+                raise GrabLibError('File not found or not valid JSON: %s' % lib_def)
+            else:
+                process_function = process_json
+        else:
+            path_lower = lib_def.lower()
+            if not any([path_lower.endswith(ext) for ext in ('.py', '.json')]):
+                raise GrabLibError('Libs definition file does not have extension .py or .json: %s' % lib_def)
 
-        path_lower = file_path.lower()
-        if not any([path_lower.endswith(ext) for ext in ('.py', '.json')]):
-            raise GrabLibError('Libs definition file does not have extension .py or .json: %s' % file_path)
+            if path_lower.endswith('.py'):
+                process_function = process_python_path
+            else:
+                with open(lib_def) as f:
+                    lib_def = json.load(f, object_pairs_hook=collections.OrderedDict)
+                process_function = process_json
 
-        dfunc = process_python_path if path_lower.endswith('.py') else process_json_path
-        libs_info, slim_info, file_options = dfunc(file_path)
+        libs_info, slim_info, file_options = process_function(lib_def)
 
         # explicitly set the options to use, starting from defaults, updating with file_options then key word options
         options = DEFAULT_OPTIONS.copy()
@@ -63,34 +75,27 @@ def process_file(file_path=DEFAULT_FILE_PATH, from_command_line=False, **options
     return True
 
 
-def process_json_path(json_path):
+def process_json(data):
     """
-    Takes the path of a json file and extracts libs_info and options
+    Takes a json object and extracts libs_info and options
     """
-    f = open(json_path, 'r')
-    try:
-        content = json.load(f, object_pairs_hook=collections.OrderedDict)
-    except Exception as e:
-        raise GrabLibError('Error Processing JSON: %s' % str(e))
-    f.close()
     options = {}
-    libs_info, slim_info = None, None
-    if 'libs' in content or 'slim' in content:
-        if 'libs' in content:
-            libs_info = content['libs']
-        if 'slim' in content:
-            slim_info = content['slim']
-        for k, v in list(content.items()):
+    if 'libs' in data or 'slim' in data:
+        libs_info = data.get('libs', None)
+        slim_info = data.get('slim', None)
+
+        for k, v in data.items():
             if k in DEFAULT_OPTIONS:
                 options[k] = v
     else:
-        libs_info = content
+        libs_info, slim_info = None, None
+        libs_info = data
     return libs_info, slim_info, options
 
 
-def ordered_dict(dict):
+def ordered_dict(d):
     # make sure the order is at least consistent, we can't do better than this
-    return collections.OrderedDict(sorted(dict.items(), key=lambda d: d[0]))
+    return collections.OrderedDict(sorted(d.items(), key=lambda kv: kv[0]))
 
 
 def process_python_path(python_path):

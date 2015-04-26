@@ -1,14 +1,14 @@
 import os
 import zipfile
 import re
-import traceback
 
 import requests
+from requests.exceptions import RequestException
 
 try:
     from cStringIO import StringIO as IO
 except ImportError:
-    from io import StringIO as IO
+    from io import BytesIO as IO
 
 from .common import GrabLibError, ProcessBase
 
@@ -17,6 +17,8 @@ class DownloadLibs(ProcessBase):
     """
     main class for downloading library files based on json file.
     """
+    downloaded = 0
+    ignored = 0
 
     def __init__(self, libs_info, sites=None, **kw):
         """
@@ -42,8 +44,6 @@ class DownloadLibs(ProcessBase):
         """
         self.output('', 3)
         self.output('Downloading files to: %s' % self.libs_root, 1)
-        self.downloaded = 0
-        self.ignored = 0
         for url_base, value in list(self.libs_info.items()):
             url = self._setup_url(url_base)
             try:
@@ -53,15 +53,11 @@ class DownloadLibs(ProcessBase):
                     success = self._process_normal_file(url, value)
                 if success:
                     self.downloaded += 1
-            except Exception as e:
-                self.output('Error Downloading "%s" to "%s"' % (url, value), 0)
-                self.output('ERROR: %s' % str(e), 0)
-                if not isinstance(e, GrabLibError):
-                    self.output(traceback.format_exc(), 0)
-                return False
-        self.output(
-            'Library download finished: %d files downloaded, %d existing and ignored' % (self.downloaded, self.ignored),
-            1)
+            except GrabLibError as e:
+                # create new exception to show which file download went wrong for
+                raise GrabLibError('Downloading "%s" to "%s"\n    %s' % (url, value, e))
+        self.output('Library download finished: %d files downloaded, '
+                    '%d existing and ignored' % (self.downloaded, self.ignored), 1)
         return True
 
     def _process_normal_file(self, url, dst):
@@ -79,7 +75,7 @@ class DownloadLibs(ProcessBase):
         content = self._get_url(url)
         try:
             content = content.encode('utf8')
-        except UnicodeDecodeError:
+        except (UnicodeDecodeError, AttributeError):
             pass
         self._write(dest, content)
         self.output('Successfully downloaded %s\n' % os.path.basename(path), 3)
@@ -141,5 +137,5 @@ class DownloadLibs(ProcessBase):
                 return r.text
             else:
                 return r.content
-        except Exception as e:
+        except RequestException as e:
             raise GrabLibError('URL: %s\nProblem occurred during download: %r\n*** ABORTING ***' % (url, e))

@@ -1,8 +1,8 @@
-from .process import process_file
+from .process import grab
 from .common import VERSION
 
 import argparse
-from . import process_file
+from . import grab
 from .common import VERSION
 
 parser = argparse.ArgumentParser(description="""GrabLib
@@ -34,12 +34,12 @@ parser.add_argument('-v', '--verbosity', action='store', choices=['0', '1', '2',
 parser.add_argument('--no-colour', action='store_false', default=True, dest='colour_print',
                     help='Do not use color term to colourise output')
 
-parser.add_argument('file_path', metavar='file-path', default='grablib.json', nargs='?',
-                    help='path to JSON or python file defining files to download')
+parser.add_argument('lib_def', metavar='file-path-or-json', default='grablib.json', nargs='?',
+                    help='path to JSON or python file or valid JSON string')
 
 
 def parse_cmd_arguments(args_namespace=None, from_command_line=True):
     args_namespace = args_namespace or parser.parse_args()
     options = vars(args_namespace)
-    return process_file(from_command_line=from_command_line, **options)
+    return grab(from_command_line=from_command_line, **options)
 
