@@ -1,5 +1,15 @@
 #!/usr/bin/python
-import grablib
+import os
+import sys
+
+try:
+    import grablib
+except ImportError:
+    # try to manually add the grablib directory to path
+    parent = os.path.join(os.path.dirname(__file__), '../..')
+    sys.path.insert(0, parent)
+    import grablib
 
 if __name__ == '__main__':
-    grablib.parse_cmd_arguments()
+    if not grablib.parse_cmd_arguments():
+        sys.exit(1)

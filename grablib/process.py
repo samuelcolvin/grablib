@@ -7,8 +7,10 @@ import collections
 from .common import GrabLibError, cprint, DEFAULT_OPTIONS
 from . import download, slim
 
+DEFAULT_FILE_PATH = 'grablib.json'
 
-def process_file(file_path='grablib.json', from_command_line=False, **options):
+
+def process_file(file_path=DEFAULT_FILE_PATH, from_command_line=False, **options):
     """
     Process a file defining files to download and what to do with them.
 
@@ -17,6 +19,10 @@ def process_file(file_path='grablib.json', from_command_line=False, **options):
     :param options: additional options, these override anything in file_path, eg. from terminal
     :return: boolean, whether or not files have been downloaded
     """
+    if not os.path.exists(file_path) and file_path == DEFAULT_FILE_PATH:
+        # this is what happens if you just call `grablib` in the terminal and grablib.json doesn't exist
+        cprint('File: "%s" doesn\'t exist, use "grablib -h" to get help' % DEFAULT_FILE_PATH, file=sys.stderr)
+        return False
     kwarg_options = options
     try:
         if options.get('verbosity') is not None:

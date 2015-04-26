@@ -81,7 +81,8 @@ class CmdTest(unittest.TestCase):
         # we always use no-colour to avoid issues with termcolor being clever and not applying colour strings on travis
         ns = parser.parse_args(['test_file', '--no-colour'])
         with GetStd() as get_std:
-            parse_cmd_arguments(ns)
+            r = parse_cmd_arguments(ns)
+        self.assertEqual(r, False)
         self.assertEqual(get_std.stdout, '')
         self.assertEqual(get_std.stderr, '===================\n'
                                          'Error: File not found: test_file')
@@ -89,13 +90,15 @@ class CmdTest(unittest.TestCase):
     def test_simple_wrong_path_no_args(self):
         ns = parser.parse_args(['--no-colour'])
         with GetStd() as get_std:
-            parse_cmd_arguments(ns)
+            r = parse_cmd_arguments(ns)
+        self.assertEqual(r, False)
         self.assertEqual(get_std.stdout, '')
-        self.assertEqual(get_std.stderr, '===================\nError: File not found: grablib.json')
+        self.assertEqual(get_std.stderr, 'File: "grablib.json" doesn\'t exist, use "grablib -h" to get help')
 
     def _test_simple_case(self, ns):
         with GetStd() as get_std:
-            parse_cmd_arguments(ns, from_command_line=False)
+            r = parse_cmd_arguments(ns, from_command_line=False)
+        self.assertEqual(r, True)
         self.assertEqual(get_std.stderr, '', 'STDERR not empty: %s' % get_std.stderr)
         self.assertEqual(get_std.stdout, 'Downloading files to: test-download-dir \n'
                                          '  DOWNLOADING: jquery.min.js \n'

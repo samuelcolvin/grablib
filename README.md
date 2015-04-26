@@ -1,6 +1,9 @@
 GrabLib
 =======
 
+[![Build Status](https://travis-ci.org/samuelcolvin/grablib.svg?branch=master)](https://travis-ci.org/samuelcolvin/grablib)
+[![PyPI Status](https://img.shields.io/pypi/v/grablib.svg?style=flat)](https://pypi.python.org/pypi/grablib)
+
 Copyright (C) 2013-2014 [Samuel Colvin](http://www.scolvin.com) <S@muelColvin.com>
 
 Python tool and library for downloading, concatenating and minifying library files (eg. Javascript and CSS) so they don't clog up your repo.
@@ -21,13 +24,13 @@ The formats define the same things, the following values can be set:
 
 * **overwrite:** bool, whether or not to overwrite files that already exist, default is not to download existing.
 
-* **file_permissions:** Explicitly set files' permissions.
+* **file-permissions:** Explicitly set files' permissions.
 
 * **sites:** Dictionary of site names to generate urls to avoid repeating `https://raw.githubusercontent.com` lots of times.
 
 All options settings (except sites) can also be overwritten at the command line, in python format or using the API a special output function may also be defined.
 
-You can also call GrabLib from inside python:
+You can also call GrabLib from inside python: **this needs updating**
 
     import GrabLib
     GrabLib.process_file('path/to/definitions.json|py')

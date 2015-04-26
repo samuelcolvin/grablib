@@ -10,7 +10,7 @@ except ImportError:
 
 
 def cprint(string, *args, **kwargs):
-    colour_print = kwargs.pop('colour_print', True)
+    colour_print = kwargs.pop('colour_print', False)
     if termcolor and colour_print:
         return termcolor.cprint(string, *args, **kwargs)
     else:

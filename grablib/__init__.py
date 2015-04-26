@@ -41,5 +41,5 @@ parser.add_argument('file_path', metavar='file-path', default='grablib.json', na
 def parse_cmd_arguments(args_namespace=None, from_command_line=True):
     args_namespace = args_namespace or parser.parse_args()
     options = vars(args_namespace)
-    process_file(from_command_line=from_command_line, **options)
+    return process_file(from_command_line=from_command_line, **options)
 
