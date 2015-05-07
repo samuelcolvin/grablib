@@ -39,7 +39,7 @@ DEFAULT_OPTIONS = {
 
 from distutils.version import StrictVersion
 
-VERSION = StrictVersion('0.1')
+VERSION = StrictVersion('0.1.1')
 
 
 class GrablibError(Exception):
