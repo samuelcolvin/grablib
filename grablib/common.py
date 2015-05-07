@@ -37,10 +37,6 @@ DEFAULT_OPTIONS = {
     'colour_print': False
 }
 
-from distutils.version import StrictVersion
-
-VERSION = StrictVersion('0.1.1')
-
 
 class GrablibError(Exception):
     """

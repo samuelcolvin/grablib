@@ -1,9 +1,7 @@
-from .process import grab
-from .common import VERSION
-
 import argparse
-from . import grab
-from .common import VERSION
+
+from .process import grab
+from .version import VERSION
 
 parser = argparse.ArgumentParser(description="""grablib
 
