@@ -3,6 +3,8 @@ import sys
 import imp
 import json
 import collections
+from requests.packages import urllib3
+urllib3.disable_warnings()
 
 from .common import GrablibError, cprint, DEFAULT_OPTIONS
 from . import download, slim
