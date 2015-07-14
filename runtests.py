@@ -384,7 +384,7 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
           "minify": {
             "outputfile.min.js": [
               ".*jquery.js",
-              "somewhere/very/deep/moment.js"
+              ["somewhere/very/deep/moment.js", {"m.*?ent": "minute"}]
             ]
           }
         }
@@ -401,7 +401,7 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
                                       ('2 files combined to form "test-minified-dir/outputfile.min.js"', 2)])
         self.assertEqual(os.listdir('test-minified-dir'), ['outputfile.min.js'])
         with open('test-minified-dir/outputfile.min.js') as f:
-            self.assertEqual(f.read(), "$='jQuery';moment='moment js';")
+            self.assertEqual(f.read(), "$='jQuery';minute='minute js';")
 
     @mock.patch('requests.get')
     def test_minify_local(self, mock_requests_get):

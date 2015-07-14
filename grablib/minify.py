@@ -1,9 +1,10 @@
 import os
+import re
 
 from jsmin import jsmin
 from csscompressor import compress as cssmin
 
-from .common import ProcessBase, GrablibError
+from .common import ProcessBase, GrablibError, basestring
 
 MINIFY_LOOKUP = [
     (r'.js$', jsmin),
@@ -34,25 +35,30 @@ class MinifyLibs(ProcessBase):
     def minify(self):
         grablib_files = list(self.grablib_files())
         for dst, srcs in self.minify_info.items():
-            if isinstance(srcs, dict):
-                if 'src_files' not in srcs:
-                    raise GrablibError('minifying: "src_files" not found in "%s" sources' % dst)
-                srcs = srcs['src_files']
-                # TODO: any options here?
             if not isinstance(srcs, list):
                 raise GrablibError('minifying: strange type of src_files: %s' % type(srcs))
 
             final_content = ''
             files_combined = 0
             for src in srcs:
+                content = ''
+                if not isinstance(src, basestring):
+                    # here we assume we have a 2 element list, first item being the src, second be a dict of regexes
+                    src, regexes = src
+                else:
+                    regexes = None
                 if src.startswith('./') and os.path.exists(src):
-                    final_content += self._minify_file(src)
+                    content = self._minify_file(src)
                     files_combined += 1
                 else:
                     for file_path, _ in self._search_paths(grablib_files, src):
                         full_file_path = os.path.join(self.download_root, file_path)
-                        final_content += self._minify_file(full_file_path)
+                        content = self._minify_file(full_file_path)
                         files_combined += 1
+                if regexes:
+                    for pattern, rep in regexes.items():
+                        content = re.sub(pattern, rep, content)
+                final_content += content
             if files_combined == 0:
                 self.output('no files found to form "%s"' % dst, 1)
                 continue
