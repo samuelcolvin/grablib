@@ -40,4 +40,3 @@ def parse_cmd_arguments(args_namespace=None, from_command_line=True):
     args_namespace = args_namespace or parser.parse_args()
     options = vars(args_namespace)
     return grab(from_command_line=from_command_line, **options)
-

@@ -16,7 +16,6 @@ class SlimLibs(ProcessBase):
         initialize SlimLibs.
         Args:
             slim_settings: definition of slim process
-            
             libs_root_slim: root directory to put slimmed files in.
         """
         super(SlimLibs, self).__init__(**kw)

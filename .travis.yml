@@ -5,10 +5,11 @@ python:
   - "3.4"
 
 install:
-  - pip install coverage coveralls
+  - pip install coverage coveralls flake8
 
 script:
   - coverage run --source=grablib setup.py test
+  - flake8 --max-line-length 120 grablib/
 
 after_success:
   - coveralls

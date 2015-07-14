@@ -25,7 +25,6 @@ class DownloadLibs(ProcessBase):
         initialize DownloadLibs.
         Args:
             libs_info: dict, either url: destination or zip url: dict of regex: destination, see docs
-            
             sites: dict of names of sites to simplify similar urls, see examples.
         """
         super(DownloadLibs, self).__init__(**kw)
@@ -83,11 +82,10 @@ class DownloadLibs(ProcessBase):
 
     def _process_zip(self, url, value):
         self.output('dict value found, assuming "%s" is a zip file' % url, 3)
-        zip_paths = [os.path.dirname(
-            os.path.join(self.libs_root, p))
-                     for p in list(value.values())]
-        zip_paths_exist = [os.path.exists(p) and p != self.libs_root
-                           for p in zip_paths]
+
+        zip_paths = [os.path.dirname(os.path.join(self.libs_root, p)) for p in list(value.values())]
+        zip_paths_exist = [os.path.exists(p) and p != self.libs_root for p in zip_paths]
+
         if all(zip_paths_exist) and not self.overwrite:
             self.output('all paths already exist for zip extraction', 3)
             self.output('  *** IGNORING THIS DOWNLOAD ***\n', 3)
