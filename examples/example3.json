@@ -13,8 +13,8 @@
     "{{ typeahead }}/bloodhound.js": "js/ta_raw/{{ filename }}",
     "{{ typeahead }}/bloodhound.min.js": "js/{{ filename }}",
     "{{ github }}/CreateJS/EaselJS/release_v0.7.1/lib/easeljs-0.7.1.min.js": "easeljs.min.js",
-    "{{ github }}/twbs/bootstrap/v3.1.1/dist/css/bootstrap.min.css": "{{ filename }}",
-    "{{ github }}/twbs/bootstrap/v3.1.1/dist/js/bootstrap.min.js": "{{ filename }}"
+    "{{ github }}/twbs/bootstrap/v3.3.5/dist/css/bootstrap.min.css": "{{ filename }}",
+    "{{ github }}/twbs/bootstrap/v3.3.5/dist/js/bootstrap.min.js": "{{ filename }}"
   },
   "minify_libs_root": "example3_statics_min",
   "minify":

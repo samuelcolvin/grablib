@@ -63,6 +63,11 @@ def local_requests_get(url, **kwargs):
 
         def __init__(self):
             file_name = os.path.basename(url)
+            if url == 'http://code_404.js':
+                # special case to throw 404
+                self.status_code = 404
+                self.content = self.text = ''
+                return
             file_path = os.path.join('test_files/download_file_cache', file_name)
             if not os.path.exists(file_path):
                 raise ConnectionError('file does not exist locally')
@@ -150,6 +155,18 @@ class CmdTest(unittest.TestCase):
             self.assertRaises(GrablibError, run_cmd_arguments, ns, from_command_line=False)
 
     @mock.patch('requests.get')
+    def test_download_response_404(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        ns = parser.parse_args(['{"http://code_404.js": "x"}', '--libs-root', 'test-download-dir', '--no-colour'])
+        with GetStd() as get_std:
+            r = run_cmd_arguments(ns)
+        self.assertFalse(r)
+        self.assertEqual(get_std.stdout, 'Downloading files to: test-download-dir \n  DOWNLOADING: x')
+        self.assertEqual(get_std.stderr, '===================\nError: Downloading "http://code_404.js" to "x"\n'
+                                         '    URL: http://code_404.js\nProblem occurred during download, '
+                                         'wrong status code: 404\n*** ABORTING ***')
+
+    @mock.patch('requests.get')
     def test_simple_wrong_path_command_line(self, mock_requests_get):
         mock_requests_get.side_effect = local_requests_get
         ns = parser.parse_args(['{"http://xyz.com": "x"}', '--libs-root', 'test-download-dir', '--no-colour'])
@@ -161,6 +178,74 @@ class CmdTest(unittest.TestCase):
                                          'Problem occurred during download: '
                                          'ConnectionError(\'file does not exist locally\',)\n*** ABORTING ***')
         self.assertFalse(r)
+
+    @mock.patch('requests.get')
+    def test_json_download_sites(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        json = """
+        {
+          "libs_root": "test-download-dir",
+          "sites":
+          {
+            "github": "https://raw.githubusercontent.com"
+          },
+          "libs": {
+            "{{ github }}/twbs/bootstrap/v3.3.5/dist/css/bootstrap.min.css": "{{ filename }}"
+          }
+        }
+        """
+        ns = parser.parse_args([json, '--no-colour'])
+        with GetStd() as get_std:
+            run_cmd_arguments(ns, from_command_line=False)
+        self.assertEqual(get_std.stderr, '')
+        self.assertEqual(get_std.stdout, 'Downloading files to: test-download-dir \n'
+                                         '  DOWNLOADING: bootstrap.min.css \n'
+                                         ' Library download finished: 1 files downloaded, 0 existing and ignored')
+        self.assertEqual(os.listdir('test-download-dir'), ['bootstrap.min.css'])
+
+    @mock.patch('requests.get')
+    def test_json_download_overwrite(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        os.mkdir('test-download-dir')
+        with open('test-download-dir/jquery.js', 'w') as f:
+            f.write('testing')
+        json = """
+        {
+          "libs_root": "test-download-dir",
+          "libs": {
+            "http://code.jquery.com/jquery-1.11.0.js": "jquery.js"
+          }
+        }
+        """
+        ns = parser.parse_args([json, '-w'])
+        with GetStd() as get_std:
+            run_cmd_arguments(ns, from_command_line=False)
+        self.assertEqual(get_std.stderr, '')
+        self.assertEqual(os.listdir('test-download-dir'), ['jquery.js'])
+        with open('test-download-dir/jquery.js') as f:
+            self.assertEqual(f.read(), "/*! jQuery JavaScript Library */\n$ = 'jQuery';\n")
+
+    @mock.patch('requests.get')
+    def test_json_download_dont_overwrite(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        os.mkdir('test-download-dir')
+        with open('test-download-dir/jquery.js', 'w') as f:
+            f.write('testing')
+        json = """
+        {
+          "libs_root": "test-download-dir",
+          "libs": {
+            "http://code.jquery.com/jquery-1.11.0.js": "jquery.js"
+          }
+        }
+        """
+        ns = parser.parse_args([json])
+        with GetStd() as get_std:
+            run_cmd_arguments(ns, from_command_line=False)
+        self.assertEqual(get_std.stderr, '')
+        self.assertEqual(os.listdir('test-download-dir'), ['jquery.js'])
+        with open('test-download-dir/jquery.js') as f:
+            self.assertEqual(f.read(), 'testing')
 
     @mock.patch('requests.get')
     def test_zip_download(self, mock_requests_get):

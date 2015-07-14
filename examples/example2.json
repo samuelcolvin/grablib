@@ -1,6 +1,6 @@
 {
-  "https://raw.github.com/twbs/bootstrap/v3.1.1/dist/css/bootstrap.min.css": "{{ filename }}",
-  "https://raw.github.com/twbs/bootstrap/v3.1.1/dist/js/bootstrap.min.js": "{{ filename }}",
+  "https://raw.github.com/twbs/bootstrap/v3.3.5/dist/css/bootstrap.min.css": "{{ filename }}",
+  "https://raw.github.com/twbs/bootstrap/v3.3.5/dist/js/bootstrap.min.js": "{{ filename }}",
   "http://code.jquery.com/jquery-1.11.0.min.js": "jquery.min.js",
   "https://raw.github.com/CreateJS/EaselJS/release_v0.7.1/lib/easeljs-0.7.1.min.js": "easeljs.min.js",
   "https://box2dweb.googlecode.com/files/Box2dWeb-2.1a.3.zip":

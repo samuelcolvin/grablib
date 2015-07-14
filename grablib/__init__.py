@@ -20,7 +20,7 @@ parser.add_argument('-d', '--libs-root', action='store', dest='libs_root',
 parser.add_argument('-m', '--libs-root-minified', action='store', dest='libs_root_minified',
                     help='Root directory to put minified and concatenated files in, defaults to the working directory.')
 
-parser.add_argument('-w', '--overwrite', action='store', dest='overwrite',
+parser.add_argument('-w', '--overwrite', action='store_true', dest='overwrite',
                     help='Overwrite existing files, default is not to download a library if the file already exists')
 
 parser.add_argument('-p', '--file-permissions', action='store', dest='file_permissions',
