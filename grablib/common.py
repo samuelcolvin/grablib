@@ -113,6 +113,10 @@ class ProcessBase(object):
         return False, dest
 
     def _write(self, dest, content):
+        try:
+            content = content.encode('utf8')
+        except (UnicodeDecodeError, AttributeError):
+            pass
         with open(dest, 'wb') as f:
             f.write(content)
         if self.file_perm:

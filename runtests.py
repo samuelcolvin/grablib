@@ -208,10 +208,11 @@ class CmdTest(unittest.TestCase):
                                          'Library download finished: 1 files downloaded, 0 existing and ignored \n'
                                          '  1 files combined to form "test-minified-dir/jquery.min.js"')
         self.assertEqual(os.listdir('test-download-dir'), ['jquery.js'])
-        self.assertEqual(open('test-download-dir/jquery.js').read(), "/*! jQuery JavaScript Library */\n"
-                                                                     "$ = 'jQuery';\n")
+        with open('test-download-dir/jquery.js') as f:
+            self.assertEqual(f.read(), "/*! jQuery JavaScript Library */\n$ = 'jQuery';\n")
         self.assertEqual(os.listdir('test-minified-dir'), ['jquery.min.js'])
-        self.assertEqual(open('test-minified-dir/jquery.min.js').read(), "$='jQuery';")
+        with open('test-minified-dir/jquery.min.js') as f:
+            self.assertEqual(f.read(), "$='jQuery';")
 
 
 if __name__ == '__main__':

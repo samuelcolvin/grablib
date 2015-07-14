@@ -71,10 +71,6 @@ class DownloadLibs(ProcessBase):
             return False
         self.output('DOWNLOADING: %s' % path)
         content = self._get_url(url)
-        try:
-            content = content.encode('utf8')
-        except (UnicodeDecodeError, AttributeError):
-            pass
         self._write(dest, content)
         self.output('Successfully downloaded %s\n' % os.path.basename(path), 3)
         return True
