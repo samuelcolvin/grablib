@@ -1,6 +1,6 @@
 import argparse
 
-from .process import grab
+from .grab import grab
 from .version import VERSION
 
 parser = argparse.ArgumentParser(description="""grablib
@@ -14,11 +14,11 @@ All optional arguments can also be set in the definition file.
 
 """ % VERSION, formatter_class=argparse.RawTextHelpFormatter)
 
-parser.add_argument('-t', '--libs-root', action='store', dest='libs_root',
+parser.add_argument('-d', '--libs-root', action='store', dest='libs_root',
                     help='Root directory to put downloaded files in, defaults to the working directory.')
 
-parser.add_argument('-s', '--libs-root-slim', action='store', dest='libs_root_slim',
-                    help='Root directory to put slimmed files in, defaults to libs_root.')
+parser.add_argument('-m', '--libs-root-minified', action='store', dest='libs_root_minified',
+                    help='Root directory to put minified and concatenated files in, defaults to the working directory.')
 
 parser.add_argument('-w', '--overwrite', action='store', dest='overwrite',
                     help='Overwrite existing files, default is not to download a library if the file already exists')
@@ -36,7 +36,7 @@ parser.add_argument('lib_def', metavar='file-path-or-json', default='grablib.jso
                     help='path to JSON or python file or valid JSON string, defaults to "grablib.json".')
 
 
-def parse_cmd_arguments(args_namespace=None, from_command_line=True):
+def run_cmd_arguments(args_namespace=None, from_command_line=True):
     args_namespace = args_namespace or parser.parse_args()
     options = vars(args_namespace)
     return grab(from_command_line=from_command_line, **options)

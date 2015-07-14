@@ -7,7 +7,7 @@ from requests.packages import urllib3
 urllib3.disable_warnings()
 
 from .common import GrablibError, cprint, DEFAULT_OPTIONS
-from . import download, slim
+from . import download, minify
 
 DEFAULT_FILE_PATH = 'grablib.json'
 
@@ -54,7 +54,7 @@ def grab(lib_def=DEFAULT_FILE_PATH, from_command_line=False, **options):
                     lib_def = json.load(f, object_pairs_hook=collections.OrderedDict)
                 process_function = process_json
 
-        libs_info, slim_info, file_options = process_function(lib_def)
+        libs_info, minify_info, file_options = process_function(lib_def)
 
         # explicitly set the options to use, starting from defaults, updating with file_options then key word options
         options = DEFAULT_OPTIONS.copy()
@@ -63,8 +63,8 @@ def grab(lib_def=DEFAULT_FILE_PATH, from_command_line=False, **options):
         if libs_info:
             if not download.DownloadLibs(libs_info, **options).download():
                 return False
-        if slim_info:
-            if not slim.SlimLibs(slim_info, **options).slim():
+        if minify_info:
+            if not minify.MinifyLibs(minify_info, **options).minify():
                 return False
 
     except GrablibError as e:
@@ -82,17 +82,17 @@ def process_json(data):
     Takes a json object and extracts libs_info and options
     """
     options = {}
-    if 'libs' in data or 'slim' in data:
+    if 'libs' in data or 'minify' in data:
         libs_info = data.get('libs', None)
-        slim_info = data.get('slim', None)
+        minify_info = data.get('minify', None)
 
         for k, v in data.items():
             if k in DEFAULT_OPTIONS:
                 options[k] = v
     else:
-        libs_info, slim_info = None, None
+        libs_info, minify_info = None, None
         libs_info = data
-    return libs_info, slim_info, options
+    return libs_info, minify_info, options
 
 
 def ordered_dict(d):
@@ -115,9 +115,9 @@ def process_python_path(python_path):
         if value is not None:
             options[name] = value
 
-    libs_info, slim_info = None, None
+    libs_info, minify_info = None, None
     if hasattr(GrabSettings, 'libs'):
         libs_info = ordered_dict(GrabSettings.libs)
-    if hasattr(GrabSettings, 'slim'):
-        slim_info = ordered_dict(GrabSettings.slim)
-    return libs_info, slim_info, options
+    if hasattr(GrabSettings, 'minify'):
+        minify_info = ordered_dict(GrabSettings.minify)
+    return libs_info, minify_info, options

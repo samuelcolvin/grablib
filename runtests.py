@@ -17,7 +17,7 @@ except ImportError:
     # python3
     from unittest import mock
 
-from grablib import parse_cmd_arguments, parser
+from grablib import run_cmd_arguments, parser
 
 
 class GetStd(object):
@@ -59,6 +59,8 @@ def local_requests_get(url, **kwargs):
     :return:
     """
     class MockResponse(object):
+        status_code = 200
+
         def __init__(self):
             file_name = os.path.basename(url)
             file_path = os.path.join('test_files/download_file_cache', file_name)
@@ -78,20 +80,23 @@ def local_requests_get(url, **kwargs):
 
 
 class CmdTest(unittest.TestCase):
+    def _clear_dirs(self):
+        for f in ('test-download-dir', 'test-minified-dir'):
+            if os.path.exists(f):
+                shutil.rmtree(f)
+
     def setUp(self):
-        if os.path.exists('test-download-dir'):
-            shutil.rmtree('test-download-dir')
+        self._clear_dirs()
 
     def tearDown(self):
         # duplicates above so we can switch this one off while we're looking at the files without breaking tests
-        if os.path.exists('test-download-dir'):
-            shutil.rmtree('test-download-dir')
+        self._clear_dirs()
 
     def test_simple_wrong_path(self):
         # we always use no-colour to avoid issues with termcolor being clever and not applying colour strings on travis
         ns = parser.parse_args(['test_file', '--no-colour'])
         with GetStd() as get_std:
-            r = parse_cmd_arguments(ns)
+            r = run_cmd_arguments(ns)
         self.assertEqual(get_std.stdout, '')
         self.assertEqual(get_std.stderr, '===================\n'
                                          'Error: File not found or not valid JSON: test_file')
@@ -100,14 +105,14 @@ class CmdTest(unittest.TestCase):
     def test_simple_wrong_path_no_args(self):
         ns = parser.parse_args(['--no-colour'])
         with GetStd() as get_std:
-            r = parse_cmd_arguments(ns)
+            r = run_cmd_arguments(ns)
         self.assertEqual(get_std.stdout, '')
         self.assertEqual(get_std.stderr, 'File: "grablib.json" doesn\'t exist, use "grablib -h" to get help')
         self.assertEqual(r, False)
 
     def _test_simple_case(self, ns):
         with GetStd() as get_std:
-            r = parse_cmd_arguments(ns, from_command_line=False)
+            r = run_cmd_arguments(ns, from_command_line=False)
         self.assertEqual(get_std.stderr, '', 'STDERR not empty: %s' % get_std.stderr)
         self.assertEqual(get_std.stdout, 'Downloading files to: test-download-dir \n'
                                          '  DOWNLOADING: jquery.min.js \n'
@@ -142,14 +147,14 @@ class CmdTest(unittest.TestCase):
         mock_requests_get.side_effect = local_requests_get
         ns = parser.parse_args(['{"http://xyz.com": "x"}', '--libs-root', 'test-download-dir', '--no-colour'])
         with GetStd() as get_std:
-            self.assertRaises(GrablibError, parse_cmd_arguments, ns, from_command_line=False)
+            self.assertRaises(GrablibError, run_cmd_arguments, ns, from_command_line=False)
 
     @mock.patch('requests.get')
     def test_simple_wrong_path_command_line(self, mock_requests_get):
         mock_requests_get.side_effect = local_requests_get
         ns = parser.parse_args(['{"http://xyz.com": "x"}', '--libs-root', 'test-download-dir', '--no-colour'])
         with GetStd() as get_std:
-            r = parse_cmd_arguments(ns)
+            r = run_cmd_arguments(ns)
         self.assertEqual(get_std.stdout, 'Downloading files to: test-download-dir \n  DOWNLOADING: x')
         self.assertEqual(get_std.stderr, '===================\nError: Downloading "http://xyz.com" to "x"\n'
                                          '    URL: http://xyz.com\n'
@@ -170,7 +175,7 @@ class CmdTest(unittest.TestCase):
         """
         ns = parser.parse_args([json, '--libs-root', 'test-download-dir', '--no-colour'])
         with GetStd() as get_std:
-            parse_cmd_arguments(ns, from_command_line=False)
+            run_cmd_arguments(ns, from_command_line=False)
         self.assertEqual(get_std.stderr, '')
         self.assertEqual(get_std.stdout, 'Downloading files to: test-download-dir \n'
                                          '  DOWNLOADING ZIP: https://and-old-url.com/test_dir.zip... \n'
@@ -180,6 +185,33 @@ class CmdTest(unittest.TestCase):
         self.assertEqual(os.listdir('test-download-dir'), ['subdirectory'])
         wanted_files = {'a.wanted.css', 'b.wanted.js', 'c.wanted.png'}
         self.assertEqual(set(os.listdir('test-download-dir/subdirectory')), wanted_files)
+
+    @mock.patch('requests.get')
+    def test_simple_minify(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        json = """
+        {
+          "libs": {
+            "http://code.jquery.com/jquery-1.11.0.js": "jquery.js"
+          },
+          "minify": {
+            "jquery.min.js": ["jquery.js"]
+          }
+        }
+        """
+        ns = parser.parse_args([json, '-d', 'test-download-dir', '-m', 'test-minified-dir', '--no-colour'])
+        with GetStd() as get_std:
+            run_cmd_arguments(ns, from_command_line=False)
+        self.assertEqual(get_std.stderr, '')
+        self.assertEqual(get_std.stdout, 'Downloading files to: test-download-dir \n'
+                                         '  DOWNLOADING: jquery.js \n '
+                                         'Library download finished: 1 files downloaded, 0 existing and ignored \n'
+                                         '  1 files combined to form "test-minified-dir/jquery.min.js"')
+        self.assertEqual(os.listdir('test-download-dir'), ['jquery.js'])
+        self.assertEqual(open('test-download-dir/jquery.js').read(), "/*! jQuery JavaScript Library */\n"
+                                                                     "$ = 'jQuery';\n")
+        self.assertEqual(os.listdir('test-minified-dir'), ['jquery.min.js'])
+        self.assertEqual(open('test-minified-dir/jquery.min.js').read(), "$='jQuery';")
 
 
 if __name__ == '__main__':

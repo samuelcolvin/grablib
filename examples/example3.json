@@ -16,13 +16,11 @@
     "{{ github }}/twbs/bootstrap/v3.1.1/dist/css/bootstrap.min.css": "{{ filename }}",
     "{{ github }}/twbs/bootstrap/v3.1.1/dist/js/bootstrap.min.js": "{{ filename }}"
   },
-  "libs_root_slim": "example3_statics_min",
-  "slim":
+  "minify_libs_root": "example3_statics_min",
+  "minify":
   {
-    "typeahead_combined.min.js":
-    {
-      "options": ["js_slim", "js_mangle"],
-      "regex": ".*/ta_raw/.*"
-    }
+    "typeahead_combined.min.js": [
+      ".*/ta_raw/.*"
+    ]
   }
 }

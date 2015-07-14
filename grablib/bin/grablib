@@ -11,5 +11,5 @@ except ImportError:
     import grablib
 
 if __name__ == '__main__':
-    if not grablib.parse_cmd_arguments():
+    if not grablib.run_cmd_arguments():
         sys.exit(1)

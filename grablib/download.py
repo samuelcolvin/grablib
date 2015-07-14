@@ -17,19 +17,18 @@ class DownloadLibs(ProcessBase):
     """
     main class for downloading library files based on json file.
     """
-    downloaded = 0
-    ignored = 0
 
-    def __init__(self, libs_info, sites=None, **kw):
+    def __init__(self, libs_info, sites=None, **kwargs):
         """
         initialize DownloadLibs.
-        Args:
-            libs_info: dict, either url: destination or zip url: dict of regex: destination, see docs
-            sites: dict of names of sites to simplify similar urls, see examples.
+        :param libs_info: dict, either url: destination or zip url: dict of regex: destination, see docs
+        :param sites: dict of names of sites to simplify similar urls, see examples.
         """
-        super(DownloadLibs, self).__init__(**kw)
+        super(DownloadLibs, self).__init__(**kwargs)
         self.libs_info = libs_info
         self.sites = self._setup_sites(sites)
+        self.downloaded = 0
+        self.ignored = 0
 
     def __call__(self):
         """
@@ -43,7 +42,7 @@ class DownloadLibs(ProcessBase):
         """
         self.output('', 3)
         self.output('Downloading files to: %s' % self.libs_root, 1)
-        for url_base, value in list(self.libs_info.items()):
+        for url_base, value in self.libs_info.items():
             url = self._setup_url(url_base)
             try:
                 if isinstance(value, dict):
@@ -94,16 +93,39 @@ class DownloadLibs(ProcessBase):
         self.output('DOWNLOADING ZIP: %s...' % url)
         content = self._get_url(url)
         zipinmemory = IO(content)
+        zcopied = 0
         with zipfile.ZipFile(zipinmemory) as zipf:
-            def save_file(filename, new_path, dest_path):
-                _, dest = self._generate_path(self.libs_root, new_path)
-                self._write(dest, zipf.read(filename))
-
             self.output('%d file in zip archive' % len(zipf.namelist()), colourv=3)
-            zcopied = self._search_paths(zipf.namelist(), value.items(), save_file)
+
+            for filepath, regex in self._search_paths(zipf.namelist(), value.keys()):
+                new_name_base = value[regex]
+                path_is_valid, new_path = self._get_new_path(filepath, new_name_base, regex)
+                if not path_is_valid:
+                    raise GrablibError('filepath "%s" does not match regex "%s"' % filepath, regex)
+                zcopied += 1
+                _, dest = self._generate_path(self.libs_root, new_path)
+                self._write(dest, zipf.read(filepath))
+
         self.output('%d files copied from zip archive to libs_root' % zcopied, colourv=3)
         self.output('', 3)
         return True
+
+    @staticmethod
+    def _get_new_path(src_path, dest, regex='.*/(.*)'):
+        """
+        check src_path complies with regex and generate new filename
+        """
+        m = re.search(regex, src_path)
+        if not m:
+            return False, None
+        new_fn = None
+        if 'filename' in m.groupdict():
+            new_fn = m.groupdict()['filename']
+        elif len(m.groups()) > 0:
+            new_fn = m.groups()[0]
+        if new_fn:
+            dest = re.sub('{{ *filename *}}', new_fn, dest)
+        return True, dest
 
     def _setup_sites(self, sites):
         if sites is None:
@@ -131,9 +153,13 @@ class DownloadLibs(ProcessBase):
     def _get_url(self, url):
         try:
             r = requests.get(url)
+        except RequestException as e:
+            raise GrablibError('URL: %s\nProblem occurred during download: %r\n*** ABORTING ***' % (url, e))
+        else:
+            if r.status_code != 200:
+                raise GrablibError('URL: %s\nProblem occurred during download, wrong status code: %d\n*** ABORTING ***'
+                                   % (url, r.status_code))
             if r.headers['content-type'].startswith('text'):
                 return r.text
             else:
                 return r.content
-        except RequestException as e:
-            raise GrablibError('URL: %s\nProblem occurred during download: %r\n*** ABORTING ***' % (url, e))

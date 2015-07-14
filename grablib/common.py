@@ -27,8 +27,8 @@ colour_lookup = {0: ('red',),
 DEFAULT_VERBOSITY = 2
 
 DEFAULT_OPTIONS = {
-    'libs_root': '.',
-    'libs_root_slim': None,
+    'libs_root': './static/',
+    'libs_root_minified': './static/minifed/',
     'verbosity': DEFAULT_VERBOSITY,
     'overwrite': False,
     'file_permissions': None,
@@ -52,12 +52,13 @@ class ProcessBase(object):
 
     def __init__(self,
                  libs_root,
-                 libs_root_slim,
+                 libs_root_minified,
                  overwrite=False,
                  verbosity=DEFAULT_VERBOSITY,
                  file_permissions=None,
                  output=None,
-                 colour_print=True):
+                 colour_print=True,
+                 sites=None):
         """
         initialize DownloadLibs.
         :param libs_root: string, root folder to put files in
@@ -66,9 +67,10 @@ class ProcessBase(object):
         :param file_permissions: int or None, if not None permissions to give downloaded files eg. 0666
         :param output: function or None, if not None alternative function to recieve output statements.
         :param colour_print: whether to use termcolor to print output in colour
+        :param sites: not used, included here to simplify argument layout in MinifyLibs
         """
         self.libs_root = libs_root
-        self.libs_root_slim = libs_root_slim
+        self.libs_root_minified = libs_root_minified
         self.overwrite = overwrite
         self.verbosity = verbosity
         self.colour_print = colour_print
@@ -82,37 +84,26 @@ class ProcessBase(object):
             self.output('Verbosity set to %d' % verbosity)
         self.file_perm = file_permissions
 
-    def _search_paths(self, namelist, regex_dests, on_find):
-        copied = 0
-        for fn in namelist:
-            for regex, dest_path in regex_dests:
-                path_is_valid, new_path = self._get_new_path(fn, dest_path, regex=regex)
-                if not path_is_valid:
-                    continue
-                on_find(fn, new_path, dest_path)
-                copied += 1
-                break
-        return copied
-
-    @classmethod
-    def _get_new_path(cls, src_path, dest, regex='.*/(.*)'):
+    def _search_paths(self, path_list, regexes):
         """
-        check src_path complies with regex and generate new filename
+        Search paths for one or more regex and yield matching file names and the regex they matched.
+        :param path_list: list of paths to search
+        :param regexes: list (or single string) of regexes to search for
+        :yields: tuples (filepath, regex it matched)
         """
-        m = re.search(regex, src_path)
-        if not m:
-            return False, None
-        new_fn = None
-        if 'filename' in m.groupdict():
-            new_fn = m.groupdict()['filename']
-        elif len(m.groups()) > 0:
-            new_fn = m.groups()[0]
-        if new_fn:
-            dest = re.sub('{{ *filename *}}', new_fn, dest)
-        return True, dest
+        for fn in path_list:
+            for regex in regexes:
+                if re.match(regex, fn):
+                    yield fn, regex
+                    break
 
     @classmethod
     def _generate_path(cls, *path_args):
+        """
+        Create path from args if the directory does not exist create it.
+        :param path_args: chunks of path
+        :return: tuple: (if the path already existed, the new path)
+        """
         dest = os.path.join(*path_args)
         if os.path.exists(dest):
             return True, dest
