@@ -4,10 +4,14 @@ import imp
 import json
 import collections
 from requests.packages import urllib3
-urllib3.disable_warnings()
 
 from .common import GrablibError, cprint, DEFAULT_OPTIONS
 from . import download, minify
+
+try:
+    urllib3.disable_warnings()
+except AttributeError:
+    pass
 
 DEFAULT_FILE_PATH = 'grablib.json'
 

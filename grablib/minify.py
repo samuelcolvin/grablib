@@ -60,9 +60,15 @@ class MinifyLibs(ProcessBase):
         """
         get a list of file paths in the libs root directory
         """
+        root_dir_length = None
         for root, _, files in os.walk(self.libs_root):
+            if root_dir_length is None:
+                root_dir_length = len(root)
             for f in files:
-                yield f
+                file_path = os.path.join(root, f)
+                # we have to strip off the root directory to ease setting up source
+                file_path = file_path[root_dir_length:].lstrip('/')
+                yield file_path
 
     @classmethod
     def _minify_file(cls, file_path):
