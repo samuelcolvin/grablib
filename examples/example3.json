@@ -19,8 +19,6 @@
   "minify_libs_root": "example3_statics_min",
   "minify":
   {
-    "typeahead_combined.min.js": [
-      ".*/ta_raw/.*"
-    ]
+    "typeahead_combined.min.js": [".*/ta_raw/.*"]
   }
 }

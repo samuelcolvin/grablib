@@ -5,49 +5,52 @@ grablib
 [![Coverage Status](https://coveralls.io/repos/samuelcolvin/grablib/badge.svg?branch=master)](https://coveralls.io/r/samuelcolvin/grablib?branch=master)
 [![PyPI Status](https://img.shields.io/pypi/v/grablib.svg?style=flat)](https://pypi.python.org/pypi/grablib)
 
-Copyright (C) 2013-2014 [Samuel Colvin](http://www.scolvin.com) <S@muelColvin.com>
+Copyright (C) 2013-2015 Samuel Colvin
 
-Python tool and library for downloading, concatenating and minifying library files (eg. Javascript and CSS) 
-so they don't clog up your repo.
+Python tool and library for downloading, concatenating and minifying static files. Minification works with both
+javascript via [jsmin](https://bitbucket.org/dcs/jsmin/) and 
+css via [csscompressor](https://github.com/sprymix/csscompressor).
 
-Definition files can either be JSON or Python (see [examples](examples)). So the versions of libraries used in your 
-project can be defined in version control without the need for files from external projects.
+Definition files can either be JSON or Python (see [examples](examples)). So the versions of libraries 
+used in your project can be defined in version control without the need for files from external projects.
 
-    usage: grablib [-h] [-t LIBS_ROOT] [-s LIBS_ROOT_SLIM] [-w OVERWRITE]
-                   [-p FILE_PERMISSIONS] [-v {0,1,2,3}] [--no-colour]
-                   [file-path-or-json]
-    
-    grablib
-    
-    Utility for defining then downloading, concatenating and minifying your
-    projects external library files eg. Javascript, CSS.
-    
-    grablib Version: 0.1
-    (https://github.com/samuelcolvin/grablib).
-    All optional arguments can also be set in the definition file.
-    
-    positional arguments:
-      file-path-or-json     path to JSON or python file or valid JSON string, defaults to "grablib.json".
-    
-    optional arguments:
-      -h, --help            show this help message and exit
-      -t LIBS_ROOT, --libs-root LIBS_ROOT
-                            Root directory to put downloaded files in, defaults to the working directory.
-      -s LIBS_ROOT_SLIM, --libs-root-slim LIBS_ROOT_SLIM
-                            Root directory to put slimmed files in, defaults to libs_root.
-      -w OVERWRITE, --overwrite OVERWRITE
-                            Overwrite existing files, default is not to download a library if the file already exists
-      -p FILE_PERMISSIONS, --file-permissions FILE_PERMISSIONS
-                            Explicitly set file permission for each file downloaded, eg. 666
-      -v {0,1,2,3}, --verbosity {0,1,2,3}
-                            Verbosity Level 0 (nothing except errors), 1 (a little), 2 (default), 3 (everything)
-      --no-colour           Do not use color term to colourise output
+Define your static files thus: (`grablib.json`)
+```json
+{
+  "libs_root": "static_files",
+  "sites":
+  {
+    "github": "https://raw.githubusercontent.com",
+    "typeahead": "{{ github }}/twitter/typeahead.js/v0.10.2/dist"
+  },
+  "libs":
+  {
+    "{{ typeahead }}/typeahead.jquery.js": "js/ta_raw/{{ filename }}",
+    "{{ typeahead }}/bloodhound.js": "js/ta_raw/{{ filename }}",
+    "{{ github }}/twbs/bootstrap/v3.3.5/dist/css/bootstrap.min.css": "{{ filename }}",
+    "{{ github }}/twbs/bootstrap/v3.3.5/dist/js/bootstrap.min.js": "{{ filename }}"
+  },
+  "minify_libs_root": "static_files/minified",
+  "minify":
+  {
+    "typeahead_combined.min.js": [".*/ta_raw/.*"]
+  }
+}
+```
 
-You can also call grablib from inside python:
+Then download and minify you static files with just:
 
-    import grablib
-    
-    grablib.grab('path/to/definitions.json|py')
+```shell
+grablib
+```
 
-    # or with options overridden
-    grablib.grab('path/to/definitions.json|py', verbosity=3)
+You can also call grablib from python:
+
+```python
+import grablib
+
+grablib.grab('path/to/definitions.json|py')
+
+# or with options overridden
+grablib.grab('path/to/definitions.json|py', verbosity=3)
+```

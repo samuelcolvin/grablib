@@ -277,10 +277,12 @@ class CmdTest(unittest.TestCase):
         json = """
         {
           "libs": {
-            "http://code.jquery.com/jquery-1.11.0.js": "jquery.js"
+            "http://code.jquery.com/jquery-1.11.0.js": "jquery.js",
+            "http://getbs.com/bootstrap.css": "{{ filename }}"
           },
           "minify": {
-            "jquery.min.js": ["jquery.js"]
+            "jquery.min.js": ["jquery.js"],
+            "bootstrap.min.css": ["bootstrap.css"]
           }
         }
         """
@@ -289,15 +291,19 @@ class CmdTest(unittest.TestCase):
             run_cmd_arguments(ns, from_command_line=False)
         self.assertEqual(get_std.stderr, '')
         self.assertEqual(get_std.stdout, 'Downloading files to: test-download-dir \n'
-                                         '  DOWNLOADING: jquery.js \n '
-                                         'Library download finished: 1 files downloaded, 0 existing and ignored \n'
-                                         '  1 files combined to form "test-minified-dir/jquery.min.js"')
-        self.assertEqual(os.listdir('test-download-dir'), ['jquery.js'])
+                                         '  DOWNLOADING: jquery.js \n'
+                                         '  DOWNLOADING: bootstrap.css \n'
+                                         ' Library download finished: 2 files downloaded, 0 existing and ignored \n'
+                                         '  1 files combined to form "test-minified-dir/jquery.min.js" \n'
+                                         '  1 files combined to form "test-minified-dir/bootstrap.min.css"')
+        self.assertEqual(set(os.listdir('test-download-dir')), {'jquery.js', 'bootstrap.css'})
         with open('test-download-dir/jquery.js') as f:
             self.assertEqual(f.read(), "/*! jQuery JavaScript Library */\n$ = 'jQuery';\n")
-        self.assertEqual(os.listdir('test-minified-dir'), ['jquery.min.js'])
+        self.assertEqual(set(os.listdir('test-minified-dir')), {'jquery.min.js', 'bootstrap.min.css'})
         with open('test-minified-dir/jquery.min.js') as f:
             self.assertEqual(f.read(), "$='jQuery';")
+        with open('test-minified-dir/bootstrap.min.css') as f:
+            self.assertEqual(f.read(), "bootstrap{content:'this is boostrap'}")
 
 
 if __name__ == '__main__':
