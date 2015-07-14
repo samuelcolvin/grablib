@@ -7,12 +7,14 @@ grablib
 
 Copyright (C) 2013-2015 Samuel Colvin
 
-Python tool and library for downloading, concatenating and minifying static files. Minification works with both
-javascript via [jsmin](https://bitbucket.org/dcs/jsmin/) and 
+Python tool and library for downloading, concatenating and minifying external static files. 
+Minification works with both javascript via [jsmin](https://bitbucket.org/dcs/jsmin/) and 
 css via [csscompressor](https://github.com/sprymix/csscompressor).
 
 Definition files can either be JSON or Python (see [examples](examples)). So the versions of libraries 
 used in your project can be defined in version control without the need for files from external projects.
+
+## CLI Usage
 
 Define your static files thus: (`grablib.json`)
 ```json
@@ -43,6 +45,8 @@ Then download and minify you static files with just:
 ```shell
 grablib
 ```
+
+## Library Usage
 
 You can also call grablib from python:
 

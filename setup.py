@@ -3,15 +3,11 @@ import imp
 import sys
 from setuptools import setup
 
-description = "Utility for defining then downloading, concatenating and minifying your project's external library files"
+description = "Utility for defining then downloading, concatenating and minifying your project's external static files"
 long_description = description
 if 'upload' in sys.argv:
-    try:
-        import pypandoc
-    except ImportError:
-        print('unable to import pypandoc, not generating rst long_description')
-    else:
-        long_description = pypandoc.convert('README.md', 'rst')
+    import pypandoc
+    long_description = pypandoc.convert('README.md', 'rst')
 
 # importing just the files avoids importing the full package with external dependencies which might not be installed
 version = imp.load_source('version', 'grablib/version.py')

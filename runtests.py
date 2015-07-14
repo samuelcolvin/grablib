@@ -404,6 +404,31 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
             self.assertEqual(f.read(), "$='jQuery';minute='minute js';")
 
     @mock.patch('requests.get')
+    def test_minify_existing(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        os.mkdir('test-minified-dir')
+        json = """\
+        {
+          "download_root": "test-download-dir",
+          "libs": {
+            "http://code.jquery.com/jquery-1.11.0.js": "weird/place/jquery.js"
+          },
+          "minified_root": "test-minified-dir",
+          "minify": {"jquery.min.js": [".*jquery.js"]}
+        }
+        """
+        r = grablib.grab(json, output=self._take_output)
+        self.assertTrue(r)
+        self.assertEqual(self.lines, [('', 3),
+                                      ('Downloading files to: test-download-dir', 1),
+                                      ('DOWNLOADING: weird/place/jquery.js', None),
+                                      ('Successfully downloaded jquery.js\n', 3),
+                                      ('Library download finished: 1 files downloaded, 0 existing and ignored', 1),
+                                      ('minified root directory "test-minified-dir" already existing, deleting', 1),
+                                      ('1 files combined to form "test-minified-dir/jquery.min.js"', 2)])
+        self.assertEqual(os.listdir('test-minified-dir'), ['jquery.min.js'])
+
+    @mock.patch('requests.get')
     def test_minify_local(self, mock_requests_get):
         mock_requests_get.side_effect = local_requests_get
         json = """\
