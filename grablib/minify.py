@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 
 from jsmin import jsmin
 from csscompressor import compress as cssmin
@@ -36,7 +37,7 @@ class MinifyLibs(ProcessBase):
         grablib_files = list(self.grablib_files())
         if os.path.exists(self.minified_root):
             self.output('minified root directory "%s" already existing, deleting' % self.minified_root, 1)
-            os.rmdir(self.minified_root)
+            shutil.rmtree(self.minified_root)
         for dst, srcs in self.minify_info.items():
             if not isinstance(srcs, list):
                 raise GrablibError('minifying: strange type of src_files: %s' % type(srcs))

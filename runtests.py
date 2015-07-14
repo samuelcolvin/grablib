@@ -407,6 +407,8 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
     def test_minify_existing(self, mock_requests_get):
         mock_requests_get.side_effect = local_requests_get
         os.mkdir('test-minified-dir')
+        with open('test-minified-dir/whatever.txt', 'w') as f:
+            f.write('hellp')
         json = """\
         {
           "download_root": "test-download-dir",
