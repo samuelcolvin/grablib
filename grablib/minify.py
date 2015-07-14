@@ -50,13 +50,13 @@ class MinifyLibs(ProcessBase):
                     files_combined += 1
                 else:
                     for file_path, _ in self._search_paths(grablib_files, src):
-                        full_file_path = os.path.join(self.libs_root, file_path)
+                        full_file_path = os.path.join(self.download_root, file_path)
                         final_content += self._minify_file(full_file_path)
                         files_combined += 1
             if files_combined == 0:
                 self.output('no files found to form "%s"' % dst, 1)
                 continue
-            _, dst = self._generate_path(self.libs_root_minified, dst)
+            _, dst = self._generate_path(self.minified_root, dst)
             self._write(dst, final_content)
             self.output('%d files combined to form "%s"' % (files_combined, dst), 2)
         return True
@@ -66,7 +66,7 @@ class MinifyLibs(ProcessBase):
         get a list of file paths in the libs root directory
         """
         root_dir_length = None
-        for root, _, files in os.walk(self.libs_root):
+        for root, _, files in os.walk(self.download_root):
             if root_dir_length is None:
                 root_dir_length = len(root)
             for f in files:

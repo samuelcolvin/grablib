@@ -1,5 +1,5 @@
 {
-  "libs_root": "example3_statics",
+  "download_root": "example3_statics",
   "overwrite": true,
   "sites":
   {
@@ -16,7 +16,7 @@
     "{{ github }}/twbs/bootstrap/v3.3.5/dist/css/bootstrap.min.css": "{{ filename }}",
     "{{ github }}/twbs/bootstrap/v3.3.5/dist/js/bootstrap.min.js": "{{ filename }}"
   },
-  "minify_libs_root": "example3_statics_min",
+  "minified_root": "example3_statics_min",
   "minify":
   {
     "typeahead_combined.min.js": [".*/ta_raw/.*"]

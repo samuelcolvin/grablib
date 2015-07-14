@@ -93,6 +93,9 @@ def process_json(data):
         for k, v in data.items():
             if k in DEFAULT_OPTIONS:
                 options[k] = v
+        # to support old grablib.json files we have to accept the old "libs_root" name for "download_root"
+        if 'download_root' not in options and 'libs_root' in data:
+            options['download_root'] = data['libs_root']
     else:
         libs_info, minify_info = None, None
         libs_info = data

@@ -17,7 +17,7 @@ used in your project can be defined in version control without the need for file
 Define your static files thus: (`grablib.json`)
 ```json
 {
-  "libs_root": "static_files",
+  "download_root": "static_files",
   "sites":
   {
     "github": "https://raw.githubusercontent.com",
@@ -30,7 +30,7 @@ Define your static files thus: (`grablib.json`)
     "{{ github }}/twbs/bootstrap/v3.3.5/dist/css/bootstrap.min.css": "{{ filename }}",
     "{{ github }}/twbs/bootstrap/v3.3.5/dist/js/bootstrap.min.js": "{{ filename }}"
   },
-  "minify_libs_root": "static_files/minified",
+  "minified_root": "static_files/minified",
   "minify":
   {
     "typeahead_combined.min.js": [".*/ta_raw/.*"]

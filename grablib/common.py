@@ -34,8 +34,8 @@ colour_lookup = {0: ('red',),
 DEFAULT_VERBOSITY = 2
 
 DEFAULT_OPTIONS = {
-    'libs_root': './static/',
-    'libs_root_minified': './static/minifed/',
+    'download_root': './static/',
+    'minified_root': './static/minifed/',
     'verbosity': DEFAULT_VERBOSITY,
     'overwrite': False,
     'file_permissions': None,
@@ -58,8 +58,8 @@ class ProcessBase(object):
     """
 
     def __init__(self,
-                 libs_root,
-                 libs_root_minified,
+                 download_root,
+                 minified_root=None,
                  overwrite=False,
                  verbosity=DEFAULT_VERBOSITY,
                  file_permissions=None,
@@ -68,16 +68,17 @@ class ProcessBase(object):
                  sites=None):
         """
         initialize DownloadLibs.
-        :param libs_root: string, root folder to put files in
+        :param download_root: string, root folder to put files in
+        :param minified_root: string, root folder for minified and concatenated files
         :param overwrite: bool, whether or not to overwrite files that already exist, default is False
         :param verbosity: int, what to print
         :param file_permissions: int or None, if not None permissions to give downloaded files eg. 0666
-        :param output: function or None, if not None alternative function to recieve output statements.
+        :param output: function or None, if not None alternative function to receive output statements.
         :param colour_print: whether to use termcolor to print output in colour
         :param sites: not used, included here to simplify argument layout in MinifyLibs
         """
-        self.libs_root = libs_root
-        self.libs_root_minified = libs_root_minified
+        self.download_root = download_root
+        self.minified_root = minified_root
         self.overwrite = overwrite
         self.verbosity = verbosity
         self.colour_print = colour_print

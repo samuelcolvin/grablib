@@ -1,8 +1,8 @@
 # definition files can either be JSON (see example2.json) or python
-# in either format libs_root, verbosity, overwrite, file_permissions can be defined.
+# in either format download_root, verbosity, overwrite, file_permissions can be defined.
 # they can all also be overwritten at the command line.
 # in python format or using the API a special output function may also be defined
-libs_root = 'static_libs'
+download_root = 'static_libs'
 verbosity = 3
 libs = {
     'https://raw.github.com/twbs/bootstrap/v3.3.5/dist/css/bootstrap.min.css': '{{ filename }}',

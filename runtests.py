@@ -141,26 +141,56 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
     @mock.patch('requests.get')
     def test_simple_json_case(self, mock_requests_get):
         mock_requests_get.side_effect = local_requests_get
-        ns = parser.parse_args(['test_files/simple_case.json', '--libs-root', 'test-download-dir', '--no-colour'])
+        ns = parser.parse_args(['test_files/simple_case.json', '--download-root', 'test-download-dir', '--no-colour'])
         self._test_simple_case(ns)
+
+    @mock.patch('requests.get')
+    def test_simple_json_case_download_root(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        json = """\
+        {
+          "download_root": "test-download-dir",
+          "libs": {"https://whatever/bootstrap.min.css": "{{ filename }}"}
+        }
+        """
+        ns = parser.parse_args([json, '--no-colour'])
+        with GetStd():
+            r = run_cmd_arguments(ns)
+        self.assertEqual(r, True)
+        self.assertEqual(os.listdir('test-download-dir'), ['bootstrap.min.css'])
+
+    @mock.patch('requests.get')
+    def test_simple_json_case_old_name(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        json = """\
+        {
+          "libs_root": "test-download-dir",
+          "libs": {"https://whatever/bootstrap.min.css": "{{ filename }}"}
+        }
+        """
+        ns = parser.parse_args([json, '--no-colour'])
+        with GetStd():
+            r = run_cmd_arguments(ns)
+        self.assertEqual(r, True)
+        self.assertEqual(os.listdir('test-download-dir'), ['bootstrap.min.css'])
 
     @mock.patch('requests.get')
     def test_simple_python_case(self, mock_requests_get):
         mock_requests_get.side_effect = local_requests_get
-        ns = parser.parse_args(['test_files/simple_case.py', '--libs-root', 'test-download-dir', '--no-colour'])
+        ns = parser.parse_args(['test_files/simple_case.py', '--download-root', 'test-download-dir', '--no-colour'])
         self._test_simple_case(ns)
 
     @mock.patch('requests.get')
     def test_simple_wrong_path(self, mock_requests_get):
         mock_requests_get.side_effect = local_requests_get
-        ns = parser.parse_args(['{"http://xyz.com": "x"}', '--libs-root', 'test-download-dir', '--no-colour'])
+        ns = parser.parse_args(['{"http://xyz.com": "x"}', '--download-root', 'test-download-dir', '--no-colour'])
         with GetStd():
             self.assertRaises(GrablibError, run_cmd_arguments, ns, from_command_line=False)
 
     @mock.patch('requests.get')
     def test_download_response_404(self, mock_requests_get):
         mock_requests_get.side_effect = local_requests_get
-        ns = parser.parse_args(['{"http://code_404.js": "x"}', '--libs-root', 'test-download-dir', '--no-colour'])
+        ns = parser.parse_args(['{"http://code_404.js": "x"}', '--download-root', 'test-download-dir', '--no-colour'])
         with GetStd() as get_std:
             r = run_cmd_arguments(ns)
         self.assertFalse(r)
@@ -172,7 +202,7 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
     @mock.patch('requests.get')
     def test_simple_wrong_path_command_line(self, mock_requests_get):
         mock_requests_get.side_effect = local_requests_get
-        ns = parser.parse_args(['{"http://xyz.com": "x"}', '--libs-root', 'test-download-dir', '--no-colour'])
+        ns = parser.parse_args(['{"http://xyz.com": "x"}', '--download-root', 'test-download-dir', '--no-colour'])
         with GetStd() as get_std:
             r = run_cmd_arguments(ns)
         self.assertEqual(get_std.stdout, 'Downloading files to: test-download-dir \n  DOWNLOADING: x')
@@ -185,13 +215,13 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
     @mock.patch('requests.get')
     def test_invalid_json(self, mock_requests_get):
         mock_requests_get.side_effect = local_requests_get
-        ns = parser.parse_args(['{"http://xyz.com": "x"}', '--libs-root', 'test-download-dir', '--no-colour'])
+        ns = parser.parse_args(['{"http://xyz.com": "x"}', '--download-root', 'test-download-dir', '--no-colour'])
         self.assertRaises(GrablibError, run_cmd_arguments, ns, from_command_line=False)
 
     @mock.patch('requests.get')
     def test_invalid_json(self, mock_requests_get):
         mock_requests_get.side_effect = local_requests_get
-        ns = parser.parse_args(['{"http://xyz.com": "x",}', '--libs-root', 'test-download-dir', '--no-colour'])
+        ns = parser.parse_args(['{"http://xyz.com": "x",}', '--download-root', 'test-download-dir', '--no-colour'])
         self.assertRaises(GrablibError, run_cmd_arguments, ns, from_command_line=False)
 
     @mock.patch('requests.get')
@@ -199,7 +229,7 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         mock_requests_get.side_effect = local_requests_get
         json = """\
         {
-          "libs_root": "test-download-dir",
+          "download_root": "test-download-dir",
           "sites":
           {
             "github": "https://raw.githubusercontent.com"
@@ -226,7 +256,7 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
             f.write('testing')
         json = """\
         {
-          "libs_root": "test-download-dir",
+          "download_root": "test-download-dir",
           "libs": {
             "http://code.jquery.com/jquery-1.11.0.js": "jquery.js"
           }
@@ -248,7 +278,7 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
             f.write('testing')
         json = """\
         {
-          "libs_root": "test-download-dir",
+          "download_root": "test-download-dir",
           "libs": {
             "http://code.jquery.com/jquery-1.11.0.js": "jquery.js"
           }
@@ -273,14 +303,14 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
           }
         }
         """
-        ns = parser.parse_args([json, '--libs-root', 'test-download-dir', '--no-colour'])
+        ns = parser.parse_args([json, '--download-root', 'test-download-dir', '--no-colour'])
         with GetStd() as get_std:
             run_cmd_arguments(ns, from_command_line=False)
         self.assertEqual(get_std.stderr, '')
         self.assertEqual(get_std.stdout, 'Downloading files to: test-download-dir \n'
                                          '  DOWNLOADING ZIP: https://and-old-url.com/test_dir.zip... \n'
                                          '   7 file in zip archive \n'
-                                         '   3 files copied from zip archive to libs_root \n'
+                                         '   3 files copied from zip archive to download_root \n'
                                          ' Library download finished: 1 files downloaded, 0 existing and ignored')
         self.assertEqual(os.listdir('test-download-dir'), ['subdirectory'])
         wanted_files = {'a.wanted.css', 'b.wanted.js', 'c.wanted.png'}
@@ -330,7 +360,7 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
         self.lines.append((line, verbosity))
 
     def test_simple_good_case(self):
-        r = grablib.grab('{"http://xyz.com": "x"}', libs_root='test-download-dir', output=self._take_output)
+        r = grablib.grab('{"http://xyz.com": "x"}', download_root='test-download-dir', output=self._take_output)
         self.assertTrue(r)
         self.assertEqual(self.lines, [('', 3), ('Downloading files to: test-download-dir', 1),
                                       ('DOWNLOADING: x', None),
@@ -345,12 +375,12 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
         mock_requests_get.side_effect = local_requests_get
         json = """\
         {
-          "libs_root": "test-download-dir",
+          "download_root": "test-download-dir",
           "libs": {
             "http://code.jquery.com/jquery-1.11.0.js": "weird/place/jquery.js",
             "http://wherever.com/moment.js": "somewhere/very/deep/{{ filename }}"
           },
-          "libs_root_minified": "test-minified-dir",
+          "minified_root": "test-minified-dir",
           "minify": {
             "outputfile.min.js": [
               ".*jquery.js",
@@ -378,8 +408,8 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
         mock_requests_get.side_effect = local_requests_get
         json = """\
         {
-          "libs_root": "test-download-dir",
-          "libs_root_minified": "test-minified-dir",
+          "download_root": "test-download-dir",
+          "minified_root": "test-minified-dir",
           "minify": {
             "jquery.min.js": [
               "./test_files/download_file_cache/jquery-1.11.0.min.js"

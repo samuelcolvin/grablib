@@ -14,11 +14,11 @@ All optional arguments can also be set in the definition file.
 
 """ % VERSION, formatter_class=argparse.RawTextHelpFormatter)
 
-parser.add_argument('-d', '--libs-root', action='store', dest='libs_root',
-                    help='Root directory to put downloaded files in, defaults to the working directory.')
+parser.add_argument('-d', '--download-root', action='store', dest='download_root',
+                    help='Root directory to put downloaded files in, defaults to "./static/".')
 
-parser.add_argument('-m', '--libs-root-minified', action='store', dest='libs_root_minified',
-                    help='Root directory to put minified and concatenated files in, defaults to the working directory.')
+parser.add_argument('-m', '--minified-root', action='store', dest='minified_root',
+                    help='Root directory to put minified and concatenated files in, defaults to "./static/minifed/".')
 
 parser.add_argument('-w', '--overwrite', action='store_true', dest='overwrite',
                     help='Overwrite existing files, default is not to download a library if the file already exists')

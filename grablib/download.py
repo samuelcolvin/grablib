@@ -41,7 +41,7 @@ class DownloadLibs(ProcessBase):
         perform download and save.
         """
         self.output('', 3)
-        self.output('Downloading files to: %s' % self.libs_root, 1)
+        self.output('Downloading files to: %s' % self.download_root, 1)
         for url_base, value in self.libs_info.items():
             url = self._setup_url(url_base)
             try:
@@ -63,7 +63,7 @@ class DownloadLibs(ProcessBase):
         if not path_is_valid:
             self.output('URL "%s" is not valid, not downloading' % url)
             return False
-        exists, dest = self._generate_path(self.libs_root, path)
+        exists, dest = self._generate_path(self.download_root, path)
         if exists and not self.overwrite:
             self.output('file already exists: "%s"' % path, 3)
             self.output('  *** IGNORING THIS DOWNLOAD ***\n', 3)
@@ -78,8 +78,8 @@ class DownloadLibs(ProcessBase):
     def _process_zip(self, url, value):
         self.output('dict value found, assuming "%s" is a zip file' % url, 3)
 
-        zip_paths = [os.path.dirname(os.path.join(self.libs_root, p)) for p in list(value.values())]
-        zip_paths_exist = [os.path.exists(p) and p != self.libs_root for p in zip_paths]
+        zip_paths = [os.path.dirname(os.path.join(self.download_root, p)) for p in list(value.values())]
+        zip_paths_exist = [os.path.exists(p) and p != self.download_root for p in zip_paths]
 
         if all(zip_paths_exist) and not self.overwrite:
             self.output('all paths already exist for zip extraction', 3)
@@ -99,10 +99,10 @@ class DownloadLibs(ProcessBase):
                 if not path_is_valid:
                     raise GrablibError('filepath "%s" does not match regex "%s"' % filepath, regex)
                 zcopied += 1
-                _, dest = self._generate_path(self.libs_root, new_path)
+                _, dest = self._generate_path(self.download_root, new_path)
                 self._write(dest, zipf.read(filepath))
 
-        self.output('%d files copied from zip archive to libs_root' % zcopied, colourv=3)
+        self.output('%d files copied from zip archive to download_root' % zcopied, colourv=3)
         self.output('', 3)
         return True
 
