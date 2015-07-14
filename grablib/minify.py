@@ -44,10 +44,15 @@ class MinifyLibs(ProcessBase):
 
             final_content = ''
             files_combined = 0
-            for file_path, _ in self._search_paths(grablib_files, srcs):
-                full_file_path = os.path.join(self.libs_root, file_path)
-                final_content += self._minify_file(full_file_path)
-                files_combined += 1
+            for src in srcs:
+                if src.startswith('./') and os.path.exists(src):
+                    final_content += self._minify_file(src)
+                    files_combined += 1
+                else:
+                    for file_path, _ in self._search_paths(grablib_files, src):
+                        full_file_path = os.path.join(self.libs_root, file_path)
+                        final_content += self._minify_file(full_file_path)
+                        files_combined += 1
             if files_combined == 0:
                 self.output('no files found to form "%s"' % dst, 1)
                 continue

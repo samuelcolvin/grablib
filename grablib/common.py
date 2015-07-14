@@ -9,6 +9,13 @@ except ImportError:
     termcolor = None
 
 
+try:
+    basestring = basestring
+except NameError:
+    # py3
+    basestring = str
+
+
 def cprint(string, *args, **kwargs):
     colour_print = kwargs.pop('colour_print', False)
     if termcolor and colour_print:
@@ -76,6 +83,8 @@ class ProcessBase(object):
         self.colour_print = colour_print
         if output:
             self.output = output
+        elif isinstance(output, basestring) and output.lower() == 'silent':
+            self.output = self._dummy_output
         else:
             self.output = self._output
         if overwrite != DEFAULT_OPTIONS['overwrite']:
@@ -87,15 +96,17 @@ class ProcessBase(object):
     def _search_paths(self, path_list, regexes):
         """
         Search paths for one or more regex and yield matching file names and the regex they matched.
+        The order of the returned files will match the order of regexes if possible.
         :param path_list: list of paths to search
         :param regexes: list (or single string) of regexes to search for
         :yields: tuples (filepath, regex it matched)
         """
-        for fn in path_list:
-            for regex in regexes:
+        if isinstance(regexes, basestring):
+            regexes = [regexes]
+        for regex in regexes:
+            for fn in path_list:
                 if re.match(regex, fn):
                     yield fn, regex
-                    break
 
     @classmethod
     def _generate_path(cls, *path_args):
@@ -121,6 +132,9 @@ class ProcessBase(object):
             f.write(content)
         if self.file_perm:
             os.chmod(dest, self.file_perm)
+
+    def _dummy_output(self, *args, **kwargs):
+        pass
 
     def _output(self, line, verbosity=DEFAULT_VERBOSITY, colourv=None):
         if verbosity <= self.verbosity:

@@ -30,8 +30,8 @@ setup(
     scripts=['grablib/bin/grablib'],
     test_suite='runtests',
     install_requires=[
-        'requests==2.3.0',
-        'termcolor==1.1.0',
+        'requests>=2.3.0',
+        'termcolor>=1.1.0',
         'jsmin==2.1.2',
         'csscompressor==0.9.3'
     ],
