@@ -62,7 +62,8 @@ class MinifyLibs(ProcessBase):
                 if regexes:
                     for pattern, rep in regexes.items():
                         content = re.sub(pattern, rep, content)
-                final_content += content
+                final_content += content.strip('\n') + '\n'
+            final_content = final_content.rstrip('\n')
             if files_combined == 0:
                 self.output('no files found to form "%s"' % dst, 1)
                 continue
@@ -98,7 +99,11 @@ class MinifyLibs(ProcessBase):
     @staticmethod
     def _jsmin_file(file_path):
         with open(file_path) as original_file:
-            return jsmin(original_file.read())
+            # avoid problems with jsmin by not reminifying already compressed files
+            if file_path.endswith('.min.js'):
+                return original_file.read()
+            else:
+                return jsmin(original_file.read())
 
     @staticmethod
     def _cssmin_file(file_path):

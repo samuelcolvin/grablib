@@ -401,7 +401,28 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
                                       ('2 files combined to form "test-minified-dir/outputfile.min.js"', 2)])
         self.assertEqual(os.listdir('test-minified-dir'), ['outputfile.min.js'])
         with open('test-minified-dir/outputfile.min.js') as f:
-            self.assertEqual(f.read(), "$='jQuery';minute='minute js';")
+            self.assertEqual(f.read(), "$='jQuery';\nminute='minute js';")
+
+    @mock.patch('requests.get')
+    def test_minify_already_minified(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        json = """\
+        {
+          "download_root": "test-download-dir",
+          "libs": {
+            "http://code.jquery.com/jquery-1.11.0.min.js": "jquery.min.js"
+          },
+          "minified_root": "test-minified-dir",
+          "minify": {
+            "outputfile.min.js": [".*jquery.*"]
+          }
+        }
+        """
+        r = grablib.grab(json, output=self._take_output)
+        self.assertTrue(r)
+        self.assertEqual(os.listdir('test-minified-dir'), ['outputfile.min.js'])
+        with open('test-minified-dir/outputfile.min.js') as f:
+            self.assertEqual(f.read(), "$ = 'jQuery';")
 
     @mock.patch('requests.get')
     def test_minify_existing(self, mock_requests_get):
