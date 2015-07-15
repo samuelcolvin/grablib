@@ -82,10 +82,10 @@ class ProcessBase(object):
         self.overwrite = overwrite
         self.verbosity = verbosity
         self.colour_print = colour_print
-        if output:
-            self.output = output
-        elif isinstance(output, basestring) and output.lower() == 'silent':
+        if isinstance(output, basestring) and output.lower() == 'silent':
             self.output = self._dummy_output
+        elif output:
+            self.output = output
         else:
             self.output = self._output
         if overwrite != DEFAULT_OPTIONS['overwrite']:

@@ -408,28 +408,41 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
         mock_requests_get.side_effect = local_requests_get
         json = """\
         {
-          "download_root": "test-download-dir",
-          "libs": {
-            "http://code.jquery.com/jquery-1.11.0.min.js": "jquery.min.js"
-          },
-          "minified_root": "test-minified-dir",
-          "minify": {
-            "outputfile.min.js": [".*jquery.*"]
-          }
+          "libs": {"http://code.jquery.com/jquery-1.11.0.min.js": "jquery.min.js"},
+          "minify": {"outputfile.min.js": [".*jquery.*"]}
         }
         """
-        r = grablib.grab(json, output=self._take_output)
+        r = grablib.grab(json, download_root='test-download-dir', minified_root='test-minified-dir', output='silent')
         self.assertTrue(r)
         self.assertEqual(os.listdir('test-minified-dir'), ['outputfile.min.js'])
         with open('test-minified-dir/outputfile.min.js') as f:
             self.assertEqual(f.read(), "$ = 'jQuery';")
 
     @mock.patch('requests.get')
+    def test_minify_unicode(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        json = """\
+        {
+          "libs": {"http://unicode.js": "unicode.js"},
+          "minify": {"unicode.min.js": ["unicode.js"]}
+        }
+        """
+        r = grablib.grab(json, download_root='test-download-dir', minified_root='test-minified-dir', output='silent')
+        self.assertTrue(r)
+        self.assertEqual(os.listdir('test-minified-dir'), ['unicode.min.js'])
+        with open('test-minified-dir/unicode.min.js') as f:
+            fstr = f.read()
+            if hasattr(fstr, 'decode'):
+                # PY2
+                fstr = fstr.decode('utf8')
+            self.assertEqual(fstr, u'months="\u4e00\u6708";')
+
+    @mock.patch('requests.get')
     def test_minify_existing(self, mock_requests_get):
         mock_requests_get.side_effect = local_requests_get
         os.mkdir('test-minified-dir')
         with open('test-minified-dir/whatever.txt', 'w') as f:
-            f.write('hellp')
+            f.write('hello')
         json = """\
         {
           "download_root": "test-download-dir",
