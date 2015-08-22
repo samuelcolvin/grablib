@@ -2,7 +2,7 @@ grablib
 =======
 
 [![Build Status](https://travis-ci.org/samuelcolvin/grablib.svg?branch=master)](https://travis-ci.org/samuelcolvin/grablib)
-[![Coverage Status](https://coveralls.io/repos/samuelcolvin/grablib/badge.svg?branch=master)](https://coveralls.io/r/samuelcolvin/grablib?branch=master)
+[![codecov.io](http://codecov.io/github/samuelcolvin/grablib/coverage.svg?branch=master)](http://codecov.io/github/samuelcolvin/grablib?branch=master)
 [![PyPI Status](https://img.shields.io/pypi/v/grablib.svg?style=flat)](https://pypi.python.org/pypi/grablib)
 
 Copyright (C) 2013-2015 Samuel Colvin
