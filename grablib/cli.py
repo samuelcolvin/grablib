@@ -24,16 +24,16 @@ class ClickHandler(logging.Handler):
         click.secho(log_entry, fg=colour)
 
 
-def setup_logging(verbosity='info', times=False):
+def setup_logging(verbosity):
     for h in logger.handlers:
         if isinstance(h, ClickHandler):
             logger.removeHandler(h)
     handler = ClickHandler()
-    fmt = '[%(asctime)s] %(message)s' if times else '%(message)s'
-    formatter = logging.Formatter(fmt, datefmt='%H:%M:%S')
+    formatter = logging.Formatter('%(message)s', datefmt='%H:%M:%S')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
-    level = getattr(logging, verbosity.upper())
+    level_name = {'high': 'DEBUG', 'medium': 'INFO', 'low': 'WARNING'}[verbosity]
+    level = getattr(logging, level_name)
     logger.setLevel(level)
 
 
@@ -46,7 +46,7 @@ def setup_logging(verbosity='info', times=False):
               help='Overwrite existing files, default is not to download a library if the file already exists')
 @click.option('-d', '--download-root', type=click.Path(exists=False, file_okay=False),
               help='Root directory to put downloaded files in, defaults to "./static/".')
-@click.option('-v', '--verbosity', type=click.Choice(['debug', 'info', 'warning', 'error']), default='info')
+@click.option('-v', '--verbosity', type=click.Choice(['high', 'medium', 'low']), default='medium')
 def cli(action, config_file, overwrite, download_root, verbosity):
     """
     Utility for defining then downloading, preprocessing external static files
@@ -58,6 +58,6 @@ def cli(action, config_file, overwrite, download_root, verbosity):
         grab(config_file, overwrite=overwrite, download_root=download_root)
     except GrablibError as e:
         msg = '\n{}'
-        if verbosity not in {'debug', 'info'}:
-            msg += ', use "--verbosity debug/info" for more details'
+        if verbosity != 'high':
+            click.secho('use "--verbosity high" for more details', fg='red')
         raise ClickException(click.style(msg.format(e), fg='red'))

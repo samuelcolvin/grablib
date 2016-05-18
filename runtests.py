@@ -139,7 +139,7 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         self.assertEqual(result.output, 'Downloading files to: test-download-dir\n'
                                         'DOWNLOADING: jquery.min.js\n'
                                         'DOWNLOADING: bootstrap.min.css\n'
-                                        'Library download finished: 2 files downloaded, 0 existing and ignored\n')
+                                        'Download finished: 2 files downloaded, 0 existing and ignored\n')
         downloaded_files = {'jquery.min.js', 'bootstrap.min.css'}
         self.assertEqual(set(os.listdir('test-download-dir')), downloaded_files)
         for f in downloaded_files:
@@ -174,6 +174,17 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         mock_requests_get.side_effect = local_requests_get
         self._test_simple_case('--download-root', 'test-download-dir', 'download', 'test_files/simple_case.yml')
 
+    def test_wrong_format(self):
+        self.tmp_file = NamedTemporaryFile(suffix='.py', mode='w')
+        self.tmp_file.write('anything = 1')
+        self.tmp_file.flush()
+
+        result = run_args('download', self.tmp_file.name)
+        self.assertEqual(result.exit_code, 1)
+        self.assertIn('should be json or yml/yaml', result.output)
+
+        self.tmp_file.close()
+
     @mock.patch('requests.get')
     def test_download_response_404(self, mock_requests_get):
         mock_requests_get.side_effect = local_requests_get
@@ -183,6 +194,7 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         self.assertEqual(result.exit_code, 1)
         self.assertEqual(result.output, 'Downloading files to: test-download-dir\n'
                                         'DOWNLOADING: x\n'
+                                        'use "--verbosity high" for more details\n'
                                         'Error: \n'
                                         'Downloading "http://code_404.js" to "x"\n'
                                         '    URL: http://code_404.js\n'
@@ -197,6 +209,7 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         self.assertEqual(result.exit_code, 1)
         self.assertEqual(result.output, 'Downloading files to: test-download-dir\n'
                                         'DOWNLOADING: x\n'
+                                        'use "--verbosity high" for more details\n'
                                         'Error: \n'
                                         'Downloading "http://xyz.com" to "x"\n'
                                         '    URL: http://xyz.com\n'
@@ -232,7 +245,7 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
         self.assertEqual(result.output, 'Downloading files to: test-download-dir\n'
                                         'DOWNLOADING: bootstrap.min.css\n'
-                                        'Library download finished: 1 files downloaded, 0 existing and ignored\n')
+                                        'Download finished: 1 files downloaded, 0 existing and ignored\n')
         self.assertEqual(os.listdir('test-download-dir'), ['bootstrap.min.css'])
 
     @mock.patch('requests.get')
@@ -287,7 +300,7 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         }
         """)
         result = run_args('--download-root', 'test-download-dir',
-                          '--verbosity', 'debug', 'download', self.tmp_file.name)
+                          '--verbosity', 'high', 'download', self.tmp_file.name)
         self.assertEqual(result.exit_code, 0)
         self.assertEqual(result.output, (
             'Processing %s as a json file\n'
@@ -296,7 +309,7 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
             'DOWNLOADING ZIP: https://and-old-url.com/test_dir.zip...\n'
             '7 file in zip archive\n'
             '3 files copied from zip archive to download_root\n'
-            'Library download finished: 1 files downloaded, 0 existing and ignored\n') % self.tmp_file.name)
+            'Download finished: 1 files downloaded, 0 existing and ignored\n') % self.tmp_file.name)
         self.assertEqual(os.listdir('test-download-dir'), ['subdirectory'])
         wanted_files = {'a.wanted.css', 'b.wanted.js', 'c.wanted.png'}
         self.assertEqual(set(os.listdir('test-download-dir/subdirectory')), wanted_files)
@@ -317,7 +330,7 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         """)
         result = run_args('download', self.tmp_file.name)
         self.assertEqual(result.exit_code, 0)
-        result = run_args('download', '--verbosity', 'debug', self.tmp_file.name)
+        result = run_args('download', '--verbosity', 'high', self.tmp_file.name)
         self.assertEqual(result.exit_code, 0)
         self.assertIn('*** IGNORING THIS DOWNLOAD ***', result.output)
         self.assertEqual(os.listdir('test-download-dir'), ['subdirectory'])
@@ -346,7 +359,7 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         self.assertEqual(result.output, 'Downloading files to: test-download-dir\n'
                                         'DOWNLOADING: jquery.js\n'
                                         'DOWNLOADING: bootstrap.css\n'
-                                        'Library download finished: 2 files downloaded, 0 existing and ignored\n'
+                                        'Download finished: 2 files downloaded, 0 existing and ignored\n'
                                         '1 files combined to form "test-minified-dir/jquery.min.js"\n'
                                         '1 files combined to form "test-minified-dir/bootstrap.min.css"\n')
         self.assertEqual(set(os.listdir('test-download-dir')), {'jquery.js', 'bootstrap.css'})
@@ -381,13 +394,12 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
     def test_simple_good_case(self, mock_requests_get):
         mock_requests_get.side_effect = local_requests_get
         self.file_write('{"http://wherever.com/moment.js": "x"}')
-        r = grablib.grab(self.tmp_file.name, download_root='test-download-dir')
-        self.assertTrue(r)
+        grablib.grab(self.tmp_file.name, download_root='test-download-dir')
         self.assertEqual(self.hdl.log, ['Processing %s as a json file' % self.tmp_file.name,
                                         'Downloading files to: test-download-dir',
                                         'DOWNLOADING: x',
                                         'Successfully downloaded x\n',
-                                        'Library download finished: 1 files downloaded, 0 existing and ignored'])
+                                        'Download finished: 1 files downloaded, 0 existing and ignored'])
 
     @mock.patch('requests.get')
     def test_minify_2_files(self, mock_requests_get):
@@ -408,8 +420,7 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
           }
         }
         """)
-        r = grablib.grab(self.tmp_file.name)
-        self.assertTrue(r)
+        grablib.grab(self.tmp_file.name)
         self.assertIn('2 files combined to form "test-minified-dir/outputfile.min.js"', self.hdl.log)
         self.assertEqual(os.listdir('test-minified-dir'), ['outputfile.min.js'])
         with open('test-minified-dir/outputfile.min.js') as f:
@@ -424,8 +435,7 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
           "minify": {"outputfile.min.js": [".*jquery.*"]}
         }
         """
-        r = grablib.grab(json, download_root='test-download-dir', minified_root='test-minified-dir')
-        self.assertTrue(r)
+        grablib.grab(json, download_root='test-download-dir', minified_root='test-minified-dir')
         self.assertEqual(os.listdir('test-minified-dir'), ['outputfile.min.js'])
         with open('test-minified-dir/outputfile.min.js') as f:
             self.assertEqual(f.read(), "$ = 'jQuery';")
@@ -439,8 +449,7 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
           "minify": {"unicode.min.js": ["unicode.js"]}
         }
         """
-        r = grablib.grab(json, download_root='test-download-dir', minified_root='test-minified-dir')
-        self.assertTrue(r)
+        grablib.grab(json, download_root='test-download-dir', minified_root='test-minified-dir')
         self.assertEqual(os.listdir('test-minified-dir'), ['unicode.min.js'])
         with open('test-minified-dir/unicode.min.js') as f:
             fstr = f.read()
@@ -465,12 +474,11 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
           "minify": {"jquery.min.js": [".*jquery.js"]}
         }
         """
-        r = grablib.grab(json)
-        self.assertTrue(r)
+        grablib.grab(json)
         self.assertEqual(self.hdl.log, ['Downloading files to: test-download-dir',
                                         'DOWNLOADING: weird/place/jquery.js',
                                         'Successfully downloaded jquery.js\n',
-                                        'Library download finished: 1 files downloaded, 0 existing and ignored',
+                                        'Download finished: 1 files downloaded, 0 existing and ignored',
                                         'minified root directory "test-minified-dir" already existing, deleting',
                                         '1 files combined to form "test-minified-dir/jquery.min.js"'])
         self.assertEqual(os.listdir('test-minified-dir'), ['jquery.min.js'])
@@ -489,8 +497,7 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
           }
         }
         """
-        r = grablib.grab(json)
-        self.assertTrue(r)
+        grablib.grab(json)
         self.assertEqual(self.hdl.log, ['1 files combined to form "test-minified-dir/jquery.min.js"'])
         self.assertEqual(os.listdir('test-minified-dir'), ['jquery.min.js'])
 

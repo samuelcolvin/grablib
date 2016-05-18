@@ -3,17 +3,11 @@ from __future__ import unicode_literals
 import json
 import collections
 
-from requests.packages import urllib3
 import yaml
 from yaml.scanner import MarkedYAMLError
 
 from .common import GrablibError, logger, DEFAULT_OPTIONS
 from . import download, minify
-
-try:
-    urllib3.disable_warnings()
-except AttributeError:
-    pass
 
 
 def grab(config_file, **options):
@@ -43,13 +37,9 @@ def grab(config_file, **options):
     options.update({k: v for k, v in file_options.items() if v is not None})
     options.update({k: v for k, v in kwarg_options.items() if v is not None})
     if libs_info:
-        if not download.DownloadLibs(libs_info, **options).download():
-            return False
+        download.DownloadLibs(libs_info, **options).download()
     if minify_info:
-        if not minify.MinifyLibs(minify_info, **options).minify():
-            return False
-
-    return True
+        minify.MinifyLibs(minify_info, **options).minify()
 
 
 def process_obj(data):

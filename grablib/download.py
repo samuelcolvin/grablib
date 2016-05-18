@@ -49,9 +49,7 @@ class DownloadLibs(ProcessBase):
             except GrablibError as e:
                 # create new exception to show which file download went wrong for
                 raise GrablibError('Downloading "%s" to "%s"\n    %s' % (url, value, e))
-        logger.warning('Library download finished: %d files downloaded, '
-                       '%d existing and ignored', self.downloaded, self.ignored)
-        return True
+        logger.warning('Download finished: %d files downloaded, %d existing and ignored', self.downloaded, self.ignored)
 
     def _process_normal_file(self, url, dst):
         path_is_valid, path = self._get_new_path(url, dst)

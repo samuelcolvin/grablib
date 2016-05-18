@@ -13,18 +13,9 @@ except NameError:
     # py3
     basestring = str
 
-
-colour_lookup = {0: ('red',),
-                 1: ('yellow',),
-                 2: ('cyan',),
-                 3: ('green',)}
-
-DEFAULT_VERBOSITY = 2
-
 DEFAULT_OPTIONS = {
     'download_root': './static/',
     'minified_root': './static/minifed/',
-    'verbosity': DEFAULT_VERBOSITY,
     'overwrite': False,
     'file_permissions': None,
     'sites': None,
@@ -43,26 +34,18 @@ class ProcessBase(object):
     main class for downloading library files based on json file.
     """
 
-    def __init__(self,
-                 download_root,
-                 minified_root=None,
-                 overwrite=False,
-                 verbosity=DEFAULT_VERBOSITY,
-                 file_permissions=None,
-                 sites=None):
+    def __init__(self, download_root, minified_root=None, overwrite=False, file_permissions=None, sites=None):
         """
         initialize DownloadLibs.
         :param download_root: string, root folder to put files in
         :param minified_root: string, root folder for minified and concatenated files
         :param overwrite: bool, whether or not to overwrite files that already exist, default is False
-        :param verbosity: int, what to print
         :param file_permissions: int or None, if not None permissions to give downloaded files eg. 0666
         :param sites: not used, included here to simplify argument layout in MinifyLibs
         """
         self.download_root = download_root
         self.minified_root = minified_root
         self.overwrite = overwrite
-        self.verbosity = verbosity
         if overwrite != DEFAULT_OPTIONS['overwrite']:
             logger.info('Overwrite set to %r' % overwrite)
         self.file_perm = file_permissions

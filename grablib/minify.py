@@ -75,7 +75,6 @@ class MinifyLibs(ProcessBase):
             _, dst = self._generate_path(self.minified_root, dst)
             self._write(dst, final_content)
             logger.info('%d files combined to form "%s"', files_combined, dst)
-        return True
 
     def grablib_files(self):
         """
