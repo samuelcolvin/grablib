@@ -102,15 +102,13 @@ class DownloadLibs(ProcessBase):
         check src_path complies with regex and generate new filename
         """
         m = re.search(regex, src_path)
-        if not m:
-            raise GrablibError('filepath "%s" does not match regex "%s"' % (src_path, regex))
         if m.groups():
+            new_fn = m.groups()[-1]
             if dest.endswith('/'):
-                dest += '{filename}'
-            new_fn = m.groups()[0]
+                dest += '{name}'
             dest = re.sub(r'{{? ?(?:filename|name) ?}?}', new_fn, dest)
         # remove starting slash so path can't be absolute
-        return dest.lstrip('/')
+        return dest.lstrip(' /')
 
     def _setup_sites(self, sites):
         if sites is None:

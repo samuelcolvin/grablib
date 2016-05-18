@@ -578,6 +578,5 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
         self.assertEqual(os.listdir('test-download-dir/subdirectory'), ['b.txt'])
 
 
-
 if __name__ == '__main__':
     unittest.main()
