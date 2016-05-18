@@ -302,6 +302,29 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         self.assertEqual(set(os.listdir('test-download-dir/subdirectory')), wanted_files)
 
     @mock.patch('requests.get')
+    def test_zip_download_exists(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        self.file_write("""\
+        {
+          "download_root": "test-download-dir",
+          "libs": {
+            "https://and-old-url.com/test_dir.zip":
+            {
+              ".*/(.*wanted.*)": "subdirectory/{{ filename }}"
+            }
+          }
+        }
+        """)
+        result = run_args('download', self.tmp_file.name)
+        self.assertEqual(result.exit_code, 0)
+        result = run_args('download', '--verbosity', 'debug', self.tmp_file.name)
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn('*** IGNORING THIS DOWNLOAD ***', result.output)
+        self.assertEqual(os.listdir('test-download-dir'), ['subdirectory'])
+        wanted_files = {'a.wanted.css', 'b.wanted.js', 'c.wanted.png'}
+        self.assertEqual(set(os.listdir('test-download-dir/subdirectory')), wanted_files)
+
+    @mock.patch('requests.get')
     def test_simple_minify(self, mock_requests_get):
         mock_requests_get.side_effect = local_requests_get
         self.file_write("""\

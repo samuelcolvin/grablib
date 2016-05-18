@@ -1,5 +1,4 @@
 from __future__ import unicode_literals
-import re
 import logging
 
 import click
@@ -22,13 +21,7 @@ class ClickHandler(logging.Handler):
     def emit(self, record):
         log_entry = self.format(record)
         colour = self.colours.get(record.levelno, 'red')
-        m = re.match('^(\[.*?\])', log_entry)
-        if m:
-            time = click.style(m.groups()[0], fg='magenta')
-            msg = click.style(log_entry[m.end():], fg=colour)
-            click.echo(time + msg)
-        else:
-            click.secho(log_entry, fg=colour)
+        click.secho(log_entry, fg=colour)
 
 
 def setup_logging(verbosity='info', times=False):
@@ -61,10 +54,8 @@ def cli(action, config_file, overwrite, download_root, verbosity):
     """
     setup_logging(verbosity)
     try:
-        if action == 'download':
-            grab(config_file, overwrite=overwrite, download_root=download_root)
-        else:
-            raise NotImplementedError
+        # other actions are not yet implemented
+        grab(config_file, overwrite=overwrite, download_root=download_root)
     except GrablibError as e:
         msg = '\n{}'
         if verbosity not in {'debug', 'info'}:

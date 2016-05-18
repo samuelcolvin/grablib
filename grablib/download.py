@@ -32,12 +32,6 @@ class DownloadLibs(ProcessBase):
         self.downloaded = 0
         self.ignored = 0
 
-    def __call__(self):
-        """
-        alias to download
-        """
-        return self.download()
-
     def download(self):
         """
         perform download and save.
