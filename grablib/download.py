@@ -81,22 +81,25 @@ class DownloadLibs(ProcessBase):
                     continue
                 target_found = False
                 logger.debug('  searching for target for %s...', filepath)
-                for regex_pattern, target in value.items():
+                for regex_pattern, targets in value.items():
                     if not re.match(regex_pattern, filepath):
                         continue
                     target_found = True
-                    if target is None:
+                    if targets is None:
                         logger.debug('    target null, skipping')
                         break
-                    path = self._file_path(filepath, target, regex_pattern)
-                    exists, full_path = self._generate_path(self.download_root, path)
-                    logger.debug('    %s > %s based on regex %s', filepath, path, regex_pattern)
-                    if exists and not self.overwrite:
-                        zignored += 1
-                        logger.debug('    file already exists: "%s" IGNORING', path)
-                    else:
-                        zcopied += 1
-                        self._write(full_path, zipf.read(filepath))
+                    if isinstance(targets, basestring):
+                        targets = [targets]
+                    for target in targets:
+                        path = self._file_path(filepath, target, regex_pattern)
+                        exists, full_path = self._generate_path(self.download_root, path)
+                        logger.debug('    %s > %s based on regex %s', filepath, path, regex_pattern)
+                        if exists and not self.overwrite:
+                            zignored += 1
+                            logger.debug('    file already exists: "%s" IGNORING', path)
+                        else:
+                            zcopied += 1
+                            self._write(full_path, zipf.read(filepath))
                     break
                 if not target_found:
                     logger.debug('    no target found')

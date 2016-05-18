@@ -577,6 +577,25 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
         self.assertEqual(os.listdir('test-download-dir'), ['subdirectory'])
         self.assertEqual(os.listdir('test-download-dir/subdirectory'), ['b.txt'])
 
+    @mock.patch('requests.get')
+    def test_zip_download_duplicate(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        json = """
+        {
+          "https://any-old-url.com/test_assets.zip":
+          {
+            "test_assets/assets/(a.txt)": [
+              "/{name}",
+              "a_duplicated.txt",
+              "and_another.txt"
+            ]
+          }
+        }
+        """
+        grablib.grab(json, download_root='test-download-dir')
+        wanted_files = {'a.txt', 'a_duplicated.txt', 'and_another.txt'}
+        self.assertEqual(set(os.listdir('test-download-dir')), wanted_files)
+
 
 if __name__ == '__main__':
     unittest.main()
