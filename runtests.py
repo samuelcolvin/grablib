@@ -393,6 +393,8 @@ class TestingLogHandler(logging.Handler):
 
 
 class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
+    maxDiff = None
+
     def setUp(self):
         super(LibraryTestCase, self).setUp()
         for h in logger.handlers:
@@ -419,7 +421,7 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
         {
           "http://wherever.com/moment.js": "x",
           "http://wherever.com/bootstrap.css": "{ filename}",
-          "http://wherever.com/bootstrap.min.css": "whatever_{{filename }}",
+          "http://wherever.com/bootstrap.min.css": "whatever_{{name }}",
           "http://wherever.com/unicode.js": "/"
         }
         """

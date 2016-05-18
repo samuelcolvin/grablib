@@ -94,22 +94,18 @@ class DownloadLibs(ProcessBase):
         logger.info('%d files copied from zip archive, %d ignored as already exist', zcopied, zignored)
         self.downloaded += 1
 
-    def _file_path(self, src_path, dest, regex='.*/(.+)$'):
+    def _file_path(self, src_path, dest, regex=r'/([^/]+)$'):
         """
         check src_path complies with regex and generate new filename
         """
         m = re.search(regex, src_path)
         if not m:
             raise GrablibError('filepath "%s" does not match regex "%s"' % (src_path, regex))
-        new_fn = None
-        if 'filename' in m.groupdict():
-            new_fn = m.groupdict()['filename']
-        elif len(m.groups()) > 0:
-            new_fn = m.groups()[0]
-        if new_fn:
+        if m.groups():
             if dest.endswith('/'):
                 dest += '{filename}'
-            dest = re.sub(r'{{? *filename *}?}', new_fn, dest)
+            new_fn = m.groups()[0]
+            dest = re.sub(r'{{? ?(?:filename|name) ?}?}', new_fn, dest)
         # remove starting slash so path can't be absolute
         return dest.lstrip('/')
 
