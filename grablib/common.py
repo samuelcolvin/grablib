@@ -5,12 +5,11 @@ import logging
 
 logger = logging.getLogger('grablib')
 
-
 try:
-    basestring = basestring
+    str = basestring
 except NameError:
     # py3
-    basestring = str
+    str = str
 
 DEFAULT_OPTIONS = {
     'download_root': './static/',

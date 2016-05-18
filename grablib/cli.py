@@ -49,7 +49,7 @@ def setup_logging(verbosity):
 @click.option('-v', '--verbosity', type=click.Choice(['high', 'medium', 'low']), default='medium')
 def cli(action, config_file, overwrite, download_root, verbosity):
     """
-    Utility for defining then downloading, preprocessing external static files
+    Utility for defining then downloading and preprocessing external static files
     eg. Javascript, CSS.
     """
     setup_logging(verbosity)

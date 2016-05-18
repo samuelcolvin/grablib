@@ -7,7 +7,7 @@ import shutil
 from jsmin import jsmin
 from csscompressor import compress as cssmin
 
-from .common import ProcessBase, GrablibError, basestring, logger
+from .common import ProcessBase, GrablibError, str, logger
 
 MINIFY_LOOKUP = [
     (r'.js$', jsmin),
@@ -48,7 +48,7 @@ class MinifyLibs(ProcessBase):
             files_combined = 0
             for src in srcs:
                 content = ''
-                if not isinstance(src, basestring):
+                if not isinstance(src, str):
                     # here we assume we have a 2 element list, first item being the src, second be a dict of regexes
                     src, regexes = src
                 else:
@@ -84,7 +84,7 @@ class MinifyLibs(ProcessBase):
         :param regexes: list (or single string) of regexes to search for
         :yields: tuples (filepath, regex it matched)
         """
-        if isinstance(regexes, basestring):
+        if isinstance(regexes, str):
             regexes = [regexes]
         for regex in regexes:
             for fn in path_list:

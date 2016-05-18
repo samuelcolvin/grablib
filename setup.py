@@ -3,7 +3,7 @@ import imp
 import sys
 from setuptools import setup
 
-description = "Utility for defining then downloading, concatenating and minifying your project's external static files"
+description = 'Utility for defining then downloading and preprocessing external static files.'
 long_description = description
 
 if 'sdist' in sys.argv:
@@ -52,7 +52,6 @@ setup(
         'click>=6.6',
         'csscompressor==0.9.3',
         'jsmin==2.2.1',
-        'libsass>=0.10.1',
         'PyYAML>=3.11',
         'requests>=2.10.0',
     ],

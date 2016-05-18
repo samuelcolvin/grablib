@@ -13,8 +13,7 @@ bower+ for python.
 Minification works with both javascript via [jsmin](https://bitbucket.org/dcs/jsmin/) and 
 css via [csscompressor](https://github.com/sprymix/csscompressor).
 
-Definition files can either be JSON or Python (see [examples](examples)). So the versions of libraries 
-used in your project can be defined in version control without the need for files from external projects.
+Definition files can either be JSON or YAML (see [examples](examples)).
 
 ## CLI Usage
 

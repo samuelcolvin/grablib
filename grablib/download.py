@@ -13,7 +13,7 @@ try:
 except ImportError:
     from io import BytesIO as IO
 
-from .common import GrablibError, ProcessBase, logger
+from .common import GrablibError, ProcessBase, logger, str
 
 
 class DownloadLibs(ProcessBase):
@@ -88,7 +88,7 @@ class DownloadLibs(ProcessBase):
                     if targets is None:
                         logger.debug('    target null, skipping')
                         break
-                    if isinstance(targets, basestring):
+                    if isinstance(targets, str):
                         targets = [targets]
                     for target in targets:
                         path = self._file_path(filepath, target, regex_pattern)

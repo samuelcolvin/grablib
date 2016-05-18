@@ -9,8 +9,8 @@ python:
 
 install:
   - pip install --upgrade pip
-  - pip install coverage codecov flake8 mock
   - pip install .
+  - pip install coverage codecov flake8 mock
 
 script:
   - coverage run --source=grablib setup.py test
