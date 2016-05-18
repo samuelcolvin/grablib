@@ -293,7 +293,7 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         mock_requests_get.side_effect = local_requests_get
         self.file_write("""\
         {
-          "https://and-old-url.com/test_dir.zip":
+          "https://any-old-url.com/test_dir.zip":
           {
             ".*/(.*wanted.*)": "subdirectory/{{ filename }}"
           }
@@ -305,7 +305,7 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         self.assertEqual(result.output, (
             'Processing %s as a json file\n'
             'Downloading files to: test-download-dir\n'
-            'DOWNLOADING ZIP: https://and-old-url.com/test_dir.zip...\n'
+            'DOWNLOADING ZIP: https://any-old-url.com/test_dir.zip...\n'
             '7 file in zip archive\n'
             '  searching for target for test_dir/c.wanted.png...\n'
             '    test_dir/c.wanted.png > subdirectory/c.wanted.png based on regex .*/(.*wanted.*)\n'
@@ -332,7 +332,7 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         {
           "download_root": "test-download-dir",
           "libs": {
-            "https://and-old-url.com/test_dir.zip":
+            "https://any-old-url.com/test_dir.zip":
             {
               ".*/(.*wanted.*)": "subdirectory/{{ filename }}"
             }
@@ -534,7 +534,7 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
         mock_requests_get.side_effect = local_requests_get
         json = """
         {
-          "https://and-old-url.com/test_assets.zip":
+          "https://any-old-url.com/test_assets.zip":
           {
             "test_assets/assets/(.+)": "subdirectory/{{ filename }}"
           }
@@ -543,7 +543,7 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
         grablib.grab(json, download_root='test-download-dir')
         self.assertEqual(self.hdl.log, [
             'Downloading files to: test-download-dir',
-            'DOWNLOADING ZIP: https://and-old-url.com/test_assets.zip...',
+            'DOWNLOADING ZIP: https://any-old-url.com/test_assets.zip...',
             '5 file in zip archive',
             '  searching for target for test_assets/not_in_assets.txt...',
             '    no target found',
@@ -558,6 +558,24 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
         self.assertEqual(os.listdir('test-download-dir'), ['subdirectory'])
         wanted_files = {'a.txt', 'b.txt'}
         self.assertEqual(set(os.listdir('test-download-dir/subdirectory')), wanted_files)
+
+    @mock.patch('requests.get')
+    def test_zip_download_skipping_null(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        json = """
+        {
+          "https://any-old-url.com/test_assets.zip":
+          {
+            "test_assets/assets/a.txt": null,
+            "test_assets/assets/(.+)": "subdirectory/{{ filename }}"
+          }
+        }
+        """
+        grablib.grab(json, download_root='test-download-dir')
+        self.assertIn('target null, skipping', '\n'.join(self.hdl.log))
+
+        self.assertEqual(os.listdir('test-download-dir'), ['subdirectory'])
+        self.assertEqual(os.listdir('test-download-dir/subdirectory'), ['b.txt'])
 
 
 if __name__ == '__main__':

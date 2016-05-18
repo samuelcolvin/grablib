@@ -78,6 +78,10 @@ class DownloadLibs(ProcessBase):
                 for regex_pattern, target in value.items():
                     if not re.match(regex_pattern, filepath):
                         continue
+                    target_found = True
+                    if target is None:
+                        logger.debug('    target null, skipping')
+                        break
                     path = self._file_path(filepath, target, regex_pattern)
                     exists, full_path = self._generate_path(self.download_root, path)
                     logger.debug('    %s > %s based on regex %s', filepath, path, regex_pattern)
@@ -87,7 +91,6 @@ class DownloadLibs(ProcessBase):
                     else:
                         zcopied += 1
                         self._write(full_path, zipf.read(filepath))
-                    target_found = True
                     break
                 if not target_found:
                     logger.debug('    no target found')
@@ -99,23 +102,20 @@ class DownloadLibs(ProcessBase):
         check src_path complies with regex and generate new filename
         """
         m = re.search(regex, src_path)
-        if not m:
-            raise GrablibError('filepath "%s" does not match regex "%s"' % (src_path, regex))
         if m.groups():
+            new_fn = m.groups()[-1]
             if dest.endswith('/'):
-                dest += '{filename}'
-            new_fn = m.groups()[0]
+                dest += '{name}'
             dest = re.sub(r'{{? ?(?:filename|name) ?}?}', new_fn, dest)
         # remove starting slash so path can't be absolute
-        return dest.lstrip('/')
+        return dest.lstrip(' /')
 
     def _setup_sites(self, sites):
         if sites is None:
             return None
         if not isinstance(sites, dict):
             raise GrablibError('sites is not a dict: %r' % sites)
-        # blunt way of making sure all sites in sites are replaced
-        # with luck 5 files sound be enough!
+        # blunt way of making sure all sites in sites are replaced, with luck 5 loops should be enough
         for _ in range(5):
             for k in sites:
                 sites[k] = self._replace_all(sites[k], sites)
@@ -129,7 +129,7 @@ class DownloadLibs(ProcessBase):
 
     def _replace_all(self, base, context):
         for lookup, replace in context.items():
-            base = re.sub('{{ *%s *}}' % lookup, replace, base)
+            base = re.sub('{{? ?%s ?}?}' % lookup, replace, base)
         return base
 
     def _get_url(self, url):
