@@ -5,11 +5,15 @@ from setuptools import setup
 
 description = "Utility for defining then downloading, concatenating and minifying your project's external static files"
 long_description = description
-if 'upload' in sys.argv:
-    import pypandoc
-    long_description = pypandoc.convert('README.md', 'rst')
 
-# importing just the files avoids importing the full package with external dependencies which might not be installed
+if 'sdist' in sys.argv:
+    import pypandoc
+    with open('README.md', 'r') as f:
+        text = f.read()
+    text = text[:text.find('<!-- end description -->')].strip('\n ')
+    long_description = pypandoc.convert(text, 'rst', format='md')
+
+# importing just this file avoids importing the full package with external dependencies which might not be installed
 version = imp.load_source('version', 'grablib/version.py')
 
 setup(
@@ -17,18 +21,38 @@ setup(
     version=str(version.VERSION),
     description=description,
     long_description=long_description,
+    classifiers=[
+        'Environment :: Console',
+        'Environment :: Web Environment',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: Implementation :: CPython',
+    ],
+    keywords='css,sass,scss,build,static,download',
     author='Samuel Colvin',
     license='MIT',
     author_email='S@muelColvin.com',
     url='https://github.com/samuelcolvin/grablib',
     packages=['grablib'],
+    zip_safe=True,
     platforms='any',
-    scripts=['grablib/bin/grablib'],
+    entry_points="""
+        [console_scripts]
+        harrier=harrier.cli:cli
+    """,
     test_suite='runtests',
     install_requires=[
-        'requests>=2.3.0',
-        'termcolor>=1.1.0',
-        'jsmin==2.1.2',
-        'csscompressor==0.9.3'
+        'click>=6.6',
+        'csscompressor==0.9.3',
+        'jsmin==2.2.1',
+        'libsass>=0.10.1',
+        'PyYAML>=3.11',
+        'requests>=2.10.0',
     ],
 )

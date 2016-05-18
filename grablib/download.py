@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import os
 import zipfile
 import re
@@ -10,7 +12,7 @@ try:
 except ImportError:
     from io import BytesIO as IO
 
-from .common import GrablibError, ProcessBase
+from .common import GrablibError, ProcessBase, logger
 
 
 class DownloadLibs(ProcessBase):
@@ -40,8 +42,7 @@ class DownloadLibs(ProcessBase):
         """
         perform download and save.
         """
-        self.output('', 3)
-        self.output('Downloading files to: %s' % self.download_root, 1)
+        logger.warning('Downloading files to: %s', self.download_root)
         for url_base, value in self.libs_info.items():
             url = self._setup_url(url_base)
             try:
@@ -54,44 +55,43 @@ class DownloadLibs(ProcessBase):
             except GrablibError as e:
                 # create new exception to show which file download went wrong for
                 raise GrablibError('Downloading "%s" to "%s"\n    %s' % (url, value, e))
-        self.output('Library download finished: %d files downloaded, '
-                    '%d existing and ignored' % (self.downloaded, self.ignored), 1)
+        logger.warning('Library download finished: %d files downloaded, '
+                       '%d existing and ignored', self.downloaded, self.ignored)
         return True
 
     def _process_normal_file(self, url, dst):
         path_is_valid, path = self._get_new_path(url, dst)
         if not path_is_valid:
-            self.output('URL "%s" is not valid, not downloading' % url)
+            logger.info('URL "%s" is not valid, not downloading', url)
             return False
         exists, dest = self._generate_path(self.download_root, path)
         if exists and not self.overwrite:
-            self.output('file already exists: "%s"' % path, 3)
-            self.output('  *** IGNORING THIS DOWNLOAD ***\n', 3)
+            logger.debug('file already exists: "%s" IGNORING', path)
             self.ignored += 1
             return False
-        self.output('DOWNLOADING: %s' % path)
+        logger.info('DOWNLOADING: %s', path)
         content = self._get_url(url)
         self._write(dest, content)
-        self.output('Successfully downloaded %s\n' % os.path.basename(path), 3)
+        logger.debug('Successfully downloaded %s\n', os.path.basename(path))
         return True
 
     def _process_zip(self, url, value):
-        self.output('dict value found, assuming "%s" is a zip file' % url, 3)
+        logger.debug('dict value found, assuming "%s" is a zip file', url)
 
         zip_paths = [os.path.dirname(os.path.join(self.download_root, p)) for p in list(value.values())]
         zip_paths_exist = [os.path.exists(p) and p != self.download_root for p in zip_paths]
 
         if all(zip_paths_exist) and not self.overwrite:
-            self.output('all paths already exist for zip extraction', 3)
-            self.output('  *** IGNORING THIS DOWNLOAD ***\n', 3)
+            logger.debug('all paths already exist for zip extraction')
+            logger.debug('  *** IGNORING THIS DOWNLOAD ***\n')
             self.ignored += 1
             return False
-        self.output('DOWNLOADING ZIP: %s...' % url)
+        logger.info('DOWNLOADING ZIP: %s...', url)
         content = self._get_url(url)
         zipinmemory = IO(content)
         zcopied = 0
         with zipfile.ZipFile(zipinmemory) as zipf:
-            self.output('%d file in zip archive' % len(zipf.namelist()), colourv=3)
+            logger.debug('%d file in zip archive', len(zipf.namelist()))
 
             for filepath, regex in self._search_paths(zipf.namelist(), value.keys()):
                 new_name_base = value[regex]
@@ -102,8 +102,7 @@ class DownloadLibs(ProcessBase):
                 _, dest = self._generate_path(self.download_root, new_path)
                 self._write(dest, zipf.read(filepath))
 
-        self.output('%d files copied from zip archive to download_root' % zcopied, colourv=3)
-        self.output('', 3)
+        logger.debug('%d files copied from zip archive to download_root', zcopied)
         return True
 
     @staticmethod
@@ -150,7 +149,9 @@ class DownloadLibs(ProcessBase):
         try:
             r = requests.get(url)
         except RequestException as e:
-            raise GrablibError('URL: %s\nProblem occurred during download: %r\n*** ABORTING ***' % (url, e))
+            raise GrablibError('URL: {}\n'
+                               'Problem occurred during download: {}: {}\n'
+                               '*** ABORTING ***'.format(url, e.__class__.__name__, e))
         else:
             if r.status_code != 200:
                 raise GrablibError('URL: %s\nProblem occurred during download, wrong status code: %d\n*** ABORTING ***'

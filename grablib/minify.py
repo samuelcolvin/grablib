@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import os
 import re
 import shutil
@@ -5,7 +7,7 @@ import shutil
 from jsmin import jsmin
 from csscompressor import compress as cssmin
 
-from .common import ProcessBase, GrablibError, basestring
+from .common import ProcessBase, GrablibError, basestring, logger
 
 MINIFY_LOOKUP = [
     (r'.js$', jsmin),
@@ -36,7 +38,7 @@ class MinifyLibs(ProcessBase):
     def minify(self):
         grablib_files = list(self.grablib_files())
         if os.path.exists(self.minified_root):
-            self.output('minified root directory "%s" already existing, deleting' % self.minified_root, 1)
+            logger.warning('minified root directory "%s" already existing, deleting', self.minified_root)
             shutil.rmtree(self.minified_root)
         for dst, srcs in self.minify_info.items():
             if not isinstance(srcs, list):
@@ -68,11 +70,11 @@ class MinifyLibs(ProcessBase):
                 final_content += content.strip('\n') + '\n'
             final_content = final_content.rstrip('\n')
             if files_combined == 0:
-                self.output('no files found to form "%s"' % dst, 1)
+                logger.warning('no files found to form "%s"', dst)
                 continue
             _, dst = self._generate_path(self.minified_root, dst)
             self._write(dst, final_content)
-            self.output('%d files combined to form "%s"' % (files_combined, dst), 2)
+            logger.info('%d files combined to form "%s"', files_combined, dst)
         return True
 
     def grablib_files(self):

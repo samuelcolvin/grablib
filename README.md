@@ -5,9 +5,11 @@ grablib
 [![codecov.io](http://codecov.io/github/samuelcolvin/grablib/coverage.svg?branch=master)](http://codecov.io/github/samuelcolvin/grablib?branch=master)
 [![PyPI Status](https://img.shields.io/pypi/v/grablib.svg?style=flat)](https://pypi.python.org/pypi/grablib)
 
-Copyright (C) 2013-2015 Samuel Colvin
+Copyright (C) 2013-2016 Samuel Colvin
 
-Python tool and library for downloading, concatenating and minifying external static files. 
+Python tool and library for downloading, preprocessing external static files. You can think of it a bit like
+bower+ for python.
+
 Minification works with both javascript via [jsmin](https://bitbucket.org/dcs/jsmin/) and 
 css via [csscompressor](https://github.com/sprymix/csscompressor).
 
