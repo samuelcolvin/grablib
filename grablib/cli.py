@@ -1,40 +1,13 @@
 from __future__ import unicode_literals
-import logging
 
 import click
 from click import ClickException
 
-from .common import logger, GrablibError
+from .common import GrablibError, setlogging
 from .grab import grab
 from .version import VERSION
 
 click.disable_unicode_literals_warning = True
-
-
-class ClickHandler(logging.Handler):
-    colours = {
-        logging.DEBUG: 'white',
-        logging.INFO: 'green',
-        logging.WARN: 'yellow',
-    }
-
-    def emit(self, record):
-        log_entry = self.format(record)
-        colour = self.colours.get(record.levelno, 'red')
-        click.secho(log_entry, fg=colour)
-
-
-def setup_logging(verbosity):
-    for h in logger.handlers:
-        if isinstance(h, ClickHandler):
-            logger.removeHandler(h)
-    handler = ClickHandler()
-    formatter = logging.Formatter('%(message)s', datefmt='%H:%M:%S')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    level_name = {'high': 'DEBUG', 'medium': 'INFO', 'low': 'WARNING'}[verbosity]
-    level = getattr(logging, level_name)
-    logger.setLevel(level)
 
 
 @click.command()
@@ -52,7 +25,7 @@ def cli(action, config_file, overwrite, download_root, verbosity):
     Utility for defining then downloading and preprocessing external static files
     eg. Javascript, CSS.
     """
-    setup_logging(verbosity)
+    setlogging(verbosity)
     try:
         # other actions are not yet implemented
         grab(config_file, overwrite=overwrite, download_root=download_root)

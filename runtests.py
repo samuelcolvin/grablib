@@ -13,7 +13,7 @@ from click.testing import CliRunner
 
 import grablib
 from grablib.cli import cli
-from grablib.common import logger
+from grablib.common import logger, setlogging
 
 try:
     from StringIO import StringIO
@@ -413,6 +413,18 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
                                         'DOWNLOADING: x',
                                         'Successfully downloaded x\n',
                                         'Download finished: 1 files downloaded, 0 existing and ignored'])
+
+    @mock.patch('requests.get')
+    def test_setlogging(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        self.file_write('{"http://wherever.com/moment.js": "x"}')
+        for h in logger.handlers:
+            logger.removeHandler(h)
+        setlogging(1)
+        with GetStd() as std:
+            grablib.grab(self.tmp_file.name, download_root='test-download-dir')
+        self.assertEqual(std.stdout, 'Downloading files to: test-download-dir\n'
+                                     'Download finished: 1 files downloaded, 0 existing and ignored')
 
     @mock.patch('requests.get')
     def test_different_filenames(self, mock_requests_get):

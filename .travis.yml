@@ -14,8 +14,8 @@ install:
 
 script:
   - coverage run --source=grablib setup.py test
-  - flake8 --max-line-length 120 grablib/
-  - flake8 --max-line-length 120 runtests.py
+  - flake8 grablib/
+  - flake8 runtests.py
   - grablib -V
 
 after_success:
