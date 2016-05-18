@@ -41,70 +41,67 @@ class DownloadLibs(ProcessBase):
             url = self._setup_url(url_base)
             try:
                 if isinstance(value, dict):
-                    success = self._process_zip(url, value)
+                    self._process_zip(url, value)
                 else:
-                    success = self._process_normal_file(url, value)
-                if success:
-                    self.downloaded += 1
+                    self._process_normal_file(url, value)
             except GrablibError as e:
                 # create new exception to show which file download went wrong for
                 raise GrablibError('Downloading "%s" to "%s"\n    %s' % (url, value, e))
         logger.warning('Download finished: %d files downloaded, %d existing and ignored', self.downloaded, self.ignored)
 
     def _process_normal_file(self, url, dst):
-        path_is_valid, path = self._get_new_path(url, dst)
-        if not path_is_valid:
-            logger.info('URL "%s" is not valid, not downloading', url)
-            return False
+        path = self._get_new_path(url, dst)
         exists, dest = self._generate_path(self.download_root, path)
         if exists and not self.overwrite:
             logger.debug('file already exists: "%s" IGNORING', path)
             self.ignored += 1
-            return False
+            return
         logger.info('DOWNLOADING: %s', path)
         content = self._get_url(url)
         self._write(dest, content)
         logger.debug('Successfully downloaded %s\n', os.path.basename(path))
-        return True
+        self.downloaded += 1
 
     def _process_zip(self, url, value):
-        logger.debug('dict value found, assuming "%s" is a zip file', url)
-
-        zip_paths = [os.path.dirname(os.path.join(self.download_root, p)) for p in list(value.values())]
-        zip_paths_exist = [os.path.exists(p) and p != self.download_root for p in zip_paths]
-
-        if all(zip_paths_exist) and not self.overwrite:
-            logger.debug('all paths already exist for zip extraction')
-            logger.debug('  *** IGNORING THIS DOWNLOAD ***\n')
-            self.ignored += 1
-            return False
         logger.info('DOWNLOADING ZIP: %s...', url)
         content = self._get_url(url)
         zipinmemory = IO(content)
-        zcopied = 0
+        zcopied, zignored = 0, 0
         with zipfile.ZipFile(zipinmemory) as zipf:
             logger.debug('%d file in zip archive', len(zipf.namelist()))
 
-            for filepath, regex in self._search_paths(zipf.namelist(), value.keys()):
-                new_name_base = value[regex]
-                path_is_valid, new_path = self._get_new_path(filepath, new_name_base, regex)
-                if not path_is_valid:
-                    raise GrablibError('filepath "%s" does not match regex "%s"' % filepath, regex)
-                zcopied += 1
-                _, dest = self._generate_path(self.download_root, new_path)
-                self._write(dest, zipf.read(filepath))
-
-        logger.debug('%d files copied from zip archive to download_root', zcopied)
-        return True
+            for filepath in zipf.namelist():
+                if filepath.endswith('/'):
+                    continue
+                target_found = False
+                logger.debug('  searching for target for %s...', filepath)
+                for regex_pattern, target in value.items():
+                    if not re.match(regex_pattern, filepath):
+                        continue
+                    new_path = self._get_new_path(filepath, target, regex_pattern)
+                    exists, dest = self._generate_path(self.download_root, new_path)
+                    logger.debug('    %s > %s based on regex %s', filepath, new_path, regex_pattern)
+                    if exists and not self.overwrite:
+                        zignored += 1
+                        logger.debug('    file already exists: "%s" IGNORING', new_path)
+                    else:
+                        zcopied += 1
+                        self._write(dest, zipf.read(filepath))
+                    target_found = True
+                    break
+                if not target_found:
+                    logger.debug('    no target found')
+        logger.info('%d files copied from zip archive, %d ignored as already exist', zcopied, zignored)
+        self.downloaded += 1
 
     @staticmethod
-    def _get_new_path(src_path, dest, regex='.*/(.*)'):
+    def _get_new_path(src_path, dest, regex='.*/(.+)$'):
         """
         check src_path complies with regex and generate new filename
         """
         m = re.search(regex, src_path)
         if not m:
-            return False, None
+            raise GrablibError('filepath "%s" does not match regex "%s"' % (src_path, regex))
         new_fn = None
         if 'filename' in m.groupdict():
             new_fn = m.groupdict()['filename']
@@ -112,7 +109,7 @@ class DownloadLibs(ProcessBase):
             new_fn = m.groups()[0]
         if new_fn:
             dest = re.sub('{{ *filename *}}', new_fn, dest)
-        return True, dest
+        return dest
 
     def _setup_sites(self, sites):
         if sites is None:
