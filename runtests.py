@@ -210,9 +210,8 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         self.file_write('{"http://xyz.com": "x",}')
         result = run_args('--download-root', 'test-download-dir', 'download', self.tmp_file.name)
         self.assertEqual(result.exit_code, 1)
-        self.assertEqual(result.output, u'ValueError: Expecting property name: line 1 column 24 (char 23)\n'
-                                        u'Error: \n'
-                                        u'error loading "%s"\n' % self.tmp_file.name)
+        # output is different for different version of python
+        self.assertIn('line 1 column 24 (char 23', result.output)
 
     @mock.patch('requests.get')
     def test_json_download_sites(self, mock_requests_get):
@@ -349,13 +348,9 @@ class TestingLogHandler(logging.Handler):
 class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
     def setUp(self):
         super(LibraryTestCase, self).setUp()
-        self.lines = []
         self.hdl = TestingLogHandler()
         logger.addHandler(self.hdl)
         logger.setLevel(logging.DEBUG)
-
-    def _take_output(self, line, verbosity=None, colourv=None):
-        self.lines.append((line, verbosity))
 
     def test_simple_good_case(self):
         self.file_write('{"http://xyz.com": "x"}')
