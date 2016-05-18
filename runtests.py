@@ -371,6 +371,8 @@ class TestingLogHandler(logging.Handler):
 class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
     def setUp(self):
         super(LibraryTestCase, self).setUp()
+        for h in logger.handlers:
+            logger.removeHandler(h)
         self.hdl = TestingLogHandler()
         logger.addHandler(self.hdl)
         logger.setLevel(logging.DEBUG)
