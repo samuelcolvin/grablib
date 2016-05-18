@@ -1,7 +1,6 @@
-from __future__ import print_function, unicode_literals
+from __future__ import unicode_literals
 
 import os
-import re
 import logging
 
 logger = logging.getLogger('grablib')
@@ -49,21 +48,6 @@ class ProcessBase(object):
         if overwrite != DEFAULT_OPTIONS['overwrite']:
             logger.info('Overwrite set to %r' % overwrite)
         self.file_perm = file_permissions
-
-    def _search_paths(self, path_list, regexes):
-        """
-        Search paths for one or more regex and yield matching file names and the regex they matched.
-        The order of the returned files will match the order of regexes if possible.
-        :param path_list: list of paths to search
-        :param regexes: list (or single string) of regexes to search for
-        :yields: tuples (filepath, regex it matched)
-        """
-        if isinstance(regexes, basestring):
-            regexes = [regexes]
-        for regex in regexes:
-            for fn in path_list:
-                if re.match(regex, fn):
-                    yield fn, regex
 
     @classmethod
     def _generate_path(cls, *path_args):

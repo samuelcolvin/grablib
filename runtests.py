@@ -305,10 +305,21 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         self.assertEqual(result.output, (
             'Processing %s as a json file\n'
             'Downloading files to: test-download-dir\n'
-            'dict value found, assuming "https://and-old-url.com/test_dir.zip" is a zip file\n'
             'DOWNLOADING ZIP: https://and-old-url.com/test_dir.zip...\n'
             '7 file in zip archive\n'
-            '3 files copied from zip archive to download_root\n'
+            '  searching for target for test_dir/c.wanted.png...\n'
+            '    test_dir/c.wanted.png > subdirectory/c.wanted.png based on regex .*/(.*wanted.*)\n'
+            '  searching for target for test_dir/b.wanted.js...\n'
+            '    test_dir/b.wanted.js > subdirectory/b.wanted.js based on regex .*/(.*wanted.*)\n'
+            '  searching for target for test_dir/a.js...\n'
+            '    no target found\n'
+            '  searching for target for test_dir/b.css...\n'
+            '    no target found\n'
+            '  searching for target for test_dir/d.png...\n'
+            '    no target found\n'
+            '  searching for target for test_dir/a.wanted.css...\n'
+            '    test_dir/a.wanted.css > subdirectory/a.wanted.css based on regex .*/(.*wanted.*)\n'
+            '3 files copied from zip archive, 0 ignored as already exist\n'
             'Download finished: 1 files downloaded, 0 existing and ignored\n') % self.tmp_file.name)
         self.assertEqual(os.listdir('test-download-dir'), ['subdirectory'])
         wanted_files = {'a.wanted.css', 'b.wanted.js', 'c.wanted.png'}
@@ -332,7 +343,7 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
         result = run_args('download', '--verbosity', 'high', self.tmp_file.name)
         self.assertEqual(result.exit_code, 0)
-        self.assertIn('*** IGNORING THIS DOWNLOAD ***', result.output)
+        self.assertIn('subdirectory/b.wanted.js" IGNORING', result.output)
         self.assertEqual(os.listdir('test-download-dir'), ['subdirectory'])
         wanted_files = {'a.wanted.css', 'b.wanted.js', 'c.wanted.png'}
         self.assertEqual(set(os.listdir('test-download-dir/subdirectory')), wanted_files)
@@ -382,6 +393,8 @@ class TestingLogHandler(logging.Handler):
 
 
 class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
+    maxDiff = None
+
     def setUp(self):
         super(LibraryTestCase, self).setUp()
         for h in logger.handlers:
@@ -400,6 +413,21 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
                                         'DOWNLOADING: x',
                                         'Successfully downloaded x\n',
                                         'Download finished: 1 files downloaded, 0 existing and ignored'])
+
+    @mock.patch('requests.get')
+    def test_different_filenames(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        json = """\
+        {
+          "http://wherever.com/moment.js": "x",
+          "http://wherever.com/bootstrap.css": "{ filename}",
+          "http://wherever.com/bootstrap.min.css": "whatever_{{name }}",
+          "http://wherever.com/unicode.js": "/"
+        }
+        """
+        grablib.grab(json, download_root='test-download-dir')
+        wanted_files = {'x', 'bootstrap.css', 'whatever_bootstrap.min.css', 'unicode.js'}
+        self.assertEqual(set(os.listdir('test-download-dir')), wanted_files)
 
     @mock.patch('requests.get')
     def test_minify_2_files(self, mock_requests_get):
@@ -500,6 +528,36 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
         grablib.grab(json)
         self.assertEqual(self.hdl.log, ['1 files combined to form "test-minified-dir/jquery.min.js"'])
         self.assertEqual(os.listdir('test-minified-dir'), ['jquery.min.js'])
+
+    @mock.patch('requests.get')
+    def test_zip_download(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        json = """
+        {
+          "https://and-old-url.com/test_assets.zip":
+          {
+            "test_assets/assets/(.+)": "subdirectory/{{ filename }}"
+          }
+        }
+        """
+        grablib.grab(json, download_root='test-download-dir')
+        self.assertEqual(self.hdl.log, [
+            'Downloading files to: test-download-dir',
+            'DOWNLOADING ZIP: https://and-old-url.com/test_assets.zip...',
+            '5 file in zip archive',
+            '  searching for target for test_assets/not_in_assets.txt...',
+            '    no target found',
+            '  searching for target for test_assets/assets/b.txt...',
+            '    test_assets/assets/b.txt > subdirectory/b.txt based on regex test_assets/assets/(.+)',
+            '  searching for target for test_assets/assets/a.txt...',
+            '    test_assets/assets/a.txt > subdirectory/a.txt based on regex test_assets/assets/(.+)',
+            '2 files copied from zip archive, 0 ignored as already exist',
+            'Download finished: 1 files downloaded, 0 existing and ignored'
+        ])
+
+        self.assertEqual(os.listdir('test-download-dir'), ['subdirectory'])
+        wanted_files = {'a.txt', 'b.txt'}
+        self.assertEqual(set(os.listdir('test-download-dir/subdirectory')), wanted_files)
 
 
 if __name__ == '__main__':
