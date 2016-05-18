@@ -1,8 +1,9 @@
 from __future__ import unicode_literals
 
 import os
-import zipfile
 import re
+import shutil
+import zipfile
 
 import requests
 from requests.exceptions import RequestException
@@ -37,6 +38,11 @@ class DownloadLibs(ProcessBase):
         perform download and save.
         """
         logger.warning('Downloading files to: %s', self.download_root)
+        if self.overwrite and os.path.exists(self.download_root):
+            logger.warning('Overwrite true, deleting %s entirely', self.download_root)
+            shutil.rmtree(self.download_root)
+            os.mkdir(self.download_root)
+
         for url_base, value in self.libs_info.items():
             url = self._setup_url(url_base)
             try:
