@@ -13,7 +13,7 @@ from click.testing import CliRunner
 
 import grablib
 from grablib.cli import cli
-from grablib.common import GrablibError, logger
+from grablib.common import logger
 
 try:
     from StringIO import StringIO
@@ -352,8 +352,10 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
         logger.addHandler(self.hdl)
         logger.setLevel(logging.DEBUG)
 
-    def test_simple_good_case(self):
-        self.file_write('{"http://xyz.com": "x"}')
+    @mock.patch('requests.get')
+    def test_simple_good_case(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        self.file_write('{"http://wherever.com/moment.js": "x"}')
         r = grablib.grab(self.tmp_file.name, download_root='test-download-dir')
         self.assertTrue(r)
         self.assertEqual(self.hdl.log, ['Processing %s as a json file' % self.tmp_file.name,
@@ -362,118 +364,110 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
                                         'Successfully downloaded x\n',
                                         'Library download finished: 1 files downloaded, 0 existing and ignored'])
 
-    # @mock.patch('requests.get')
-    # def test_minify_2_files(self, mock_requests_get):
-    #     mock_requests_get.side_effect = local_requests_get
-    #     self.file_write("""\
-    #     {
-    #       "download_root": "test-download-dir",
-    #       "libs": {
-    #         "http://code.jquery.com/jquery-1.11.0.js": "weird/place/jquery.js",
-    #         "http://wherever.com/moment.js": "somewhere/very/deep/{{ filename }}"
-    #       },
-    #       "minified_root": "test-minified-dir",
-    #       "minify": {
-    #         "outputfile.min.js": [
-    #           ".*jquery.js",
-    #           ["somewhere/very/deep/moment.js", {"m.*?ent": "minute"}]
-    #         ]
-    #       }
-    #     }
-    #     """)
-    #     r = grablib.grab(self.tmp_file.name, output=self._take_output)
-    #     self.assertTrue(r)
-    #     self.assertEqual(self.lines, [('', 3),
-    #                                   ('Downloading files to: test-download-dir', 1),
-    #                                   ('DOWNLOADING: weird/place/jquery.js', None),
-    #                                   ('Successfully downloaded jquery.js\n', 3),
-    #                                   ('DOWNLOADING: somewhere/very/deep/moment.js', None),
-    #                                   ('Successfully downloaded moment.js\n', 3),
-    #                                   ('Library download finished: 2 files downloaded, 0 existing and ignored', 1),
-    #                                   ('2 files combined to form "test-minified-dir/outputfile.min.js"', 2)])
-    #     self.assertEqual(os.listdir('test-minified-dir'), ['outputfile.min.js'])
-    #     with open('test-minified-dir/outputfile.min.js') as f:
-    #         self.assertEqual(f.read(), "$='jQuery';\nminute='minute js';")
-    #
-    # @mock.patch('requests.get')
-    # def test_minify_already_minified(self, mock_requests_get):
-    #     mock_requests_get.side_effect = local_requests_get
-    #     json = """\
-    #     {
-    #       "libs": {"http://code.jquery.com/jquery-1.11.0.min.js": "jquery.min.js"},
-    #       "minify": {"outputfile.min.js": [".*jquery.*"]}
-    #     }
-    #     """
-    #     r = grablib.grab(json, download_root='test-download-dir', minified_root='test-minified-dir', output='silent')
-    #     self.assertTrue(r)
-    #     self.assertEqual(os.listdir('test-minified-dir'), ['outputfile.min.js'])
-    #     with open('test-minified-dir/outputfile.min.js') as f:
-    #         self.assertEqual(f.read(), "$ = 'jQuery';")
-    #
-    # @mock.patch('requests.get')
-    # def test_minify_unicode(self, mock_requests_get):
-    #     mock_requests_get.side_effect = local_requests_get
-    #     json = """\
-    #     {
-    #       "libs": {"http://unicode.js": "unicode.js"},
-    #       "minify": {"unicode.min.js": ["unicode.js"]}
-    #     }
-    #     """
-    #     r = grablib.grab(json, download_root='test-download-dir', minified_root='test-minified-dir', output='silent')
-    #     self.assertTrue(r)
-    #     self.assertEqual(os.listdir('test-minified-dir'), ['unicode.min.js'])
-    #     with open('test-minified-dir/unicode.min.js') as f:
-    #         fstr = f.read()
-    #         if hasattr(fstr, 'decode'):
-    #             # PY2
-    #             fstr = fstr.decode('utf8')
-    #         self.assertEqual(fstr, u'months="\u4e00\u6708";')
-    #
-    # @mock.patch('requests.get')
-    # def test_minify_existing(self, mock_requests_get):
-    #     mock_requests_get.side_effect = local_requests_get
-    #     os.mkdir('test-minified-dir')
-    #     with open('test-minified-dir/whatever.txt', 'w') as f:
-    #         f.write('hello')
-    #     json = """\
-    #     {
-    #       "download_root": "test-download-dir",
-    #       "libs": {
-    #         "http://code.jquery.com/jquery-1.11.0.js": "weird/place/jquery.js"
-    #       },
-    #       "minified_root": "test-minified-dir",
-    #       "minify": {"jquery.min.js": [".*jquery.js"]}
-    #     }
-    #     """
-    #     r = grablib.grab(json, output=self._take_output)
-    #     self.assertTrue(r)
-    #     self.assertEqual(self.lines, [('', 3),
-    #                                   ('Downloading files to: test-download-dir', 1),
-    #                                   ('DOWNLOADING: weird/place/jquery.js', None),
-    #                                   ('Successfully downloaded jquery.js\n', 3),
-    #                                   ('Library download finished: 1 files downloaded, 0 existing and ignored', 1),
-    #                                   ('minified root directory "test-minified-dir" already existing, deleting', 1),
-    #                                   ('1 files combined to form "test-minified-dir/jquery.min.js"', 2)])
-    #     self.assertEqual(os.listdir('test-minified-dir'), ['jquery.min.js'])
-    #
-    # @mock.patch('requests.get')
-    # def test_minify_local(self, mock_requests_get):
-    #     mock_requests_get.side_effect = local_requests_get
-    #     json = """\
-    #     {
-    #       "download_root": "test-download-dir",
-    #       "minified_root": "test-minified-dir",
-    #       "minify": {
-    #         "jquery.min.js": [
-    #           "./test_files/download_file_cache/jquery-1.11.0.min.js"
-    #         ]
-    #       }
-    #     }
-    #     """
-    #     r = grablib.grab(json, output=self._take_output)
-    #     self.assertTrue(r)
-    #     self.assertEqual(self.lines, [('1 files combined to form "test-minified-dir/jquery.min.js"', 2)])
-    #     self.assertEqual(os.listdir('test-minified-dir'), ['jquery.min.js'])
+    @mock.patch('requests.get')
+    def test_minify_2_files(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        self.file_write("""\
+        {
+          "download_root": "test-download-dir",
+          "libs": {
+            "http://code.jquery.com/jquery-1.11.0.js": "weird/place/jquery.js",
+            "http://wherever.com/moment.js": "somewhere/very/deep/{{ filename }}"
+          },
+          "minified_root": "test-minified-dir",
+          "minify": {
+            "outputfile.min.js": [
+              ".*jquery.js",
+              ["somewhere/very/deep/moment.js", {"m.*?ent": "minute"}]
+            ]
+          }
+        }
+        """)
+        r = grablib.grab(self.tmp_file.name)
+        self.assertTrue(r)
+        self.assertIn('2 files combined to form "test-minified-dir/outputfile.min.js"', self.hdl.log)
+        self.assertEqual(os.listdir('test-minified-dir'), ['outputfile.min.js'])
+        with open('test-minified-dir/outputfile.min.js') as f:
+            self.assertEqual(f.read(), "$='jQuery';\nminute='minute js';")
+
+    @mock.patch('requests.get')
+    def test_minify_already_minified(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        json = """\
+        {
+          "libs": {"http://code.jquery.com/jquery-1.11.0.min.js": "jquery.min.js"},
+          "minify": {"outputfile.min.js": [".*jquery.*"]}
+        }
+        """
+        r = grablib.grab(json, download_root='test-download-dir', minified_root='test-minified-dir')
+        self.assertTrue(r)
+        self.assertEqual(os.listdir('test-minified-dir'), ['outputfile.min.js'])
+        with open('test-minified-dir/outputfile.min.js') as f:
+            self.assertEqual(f.read(), "$ = 'jQuery';")
+
+    @mock.patch('requests.get')
+    def test_minify_unicode(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        json = """\
+        {
+          "libs": {"http://unicode.js": "unicode.js"},
+          "minify": {"unicode.min.js": ["unicode.js"]}
+        }
+        """
+        r = grablib.grab(json, download_root='test-download-dir', minified_root='test-minified-dir')
+        self.assertTrue(r)
+        self.assertEqual(os.listdir('test-minified-dir'), ['unicode.min.js'])
+        with open('test-minified-dir/unicode.min.js') as f:
+            fstr = f.read()
+            if hasattr(fstr, 'decode'):
+                # PY2
+                fstr = fstr.decode('utf8')
+            self.assertEqual(fstr, u'months="\u4e00\u6708";')
+
+    @mock.patch('requests.get')
+    def test_minify_existing(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        os.mkdir('test-minified-dir')
+        with open('test-minified-dir/whatever.txt', 'w') as f:
+            f.write('hello')
+        json = """\
+        {
+          "download_root": "test-download-dir",
+          "libs": {
+            "http://code.jquery.com/jquery-1.11.0.js": "weird/place/jquery.js"
+          },
+          "minified_root": "test-minified-dir",
+          "minify": {"jquery.min.js": [".*jquery.js"]}
+        }
+        """
+        r = grablib.grab(json)
+        self.assertTrue(r)
+        self.assertEqual(self.hdl.log, ['Downloading files to: test-download-dir',
+                                        'DOWNLOADING: weird/place/jquery.js',
+                                        'Successfully downloaded jquery.js\n',
+                                        'Library download finished: 1 files downloaded, 0 existing and ignored',
+                                        'minified root directory "test-minified-dir" already existing, deleting',
+                                        '1 files combined to form "test-minified-dir/jquery.min.js"'])
+        self.assertEqual(os.listdir('test-minified-dir'), ['jquery.min.js'])
+
+    @mock.patch('requests.get')
+    def test_minify_local(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        json = """\
+        {
+          "download_root": "test-download-dir",
+          "minified_root": "test-minified-dir",
+          "minify": {
+            "jquery.min.js": [
+              "./test_files/download_file_cache/jquery-1.11.0.min.js"
+            ]
+          }
+        }
+        """
+        r = grablib.grab(json)
+        self.assertTrue(r)
+        self.assertEqual(self.hdl.log, ['1 files combined to form "test-minified-dir/jquery.min.js"'])
+        self.assertEqual(os.listdir('test-minified-dir'), ['jquery.min.js'])
 
 
 if __name__ == '__main__':

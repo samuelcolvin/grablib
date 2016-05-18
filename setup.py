@@ -40,11 +40,12 @@ setup(
     author_email='S@muelColvin.com',
     url='https://github.com/samuelcolvin/grablib',
     packages=['grablib'],
+    include_package_data=True,
     zip_safe=True,
     platforms='any',
     entry_points="""
         [console_scripts]
-        harrier=harrier.cli:cli
+        grablib=grablib.cli:cli
     """,
     test_suite='runtests',
     install_requires=[

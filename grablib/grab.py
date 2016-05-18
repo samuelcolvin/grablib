@@ -24,13 +24,17 @@ def grab(config_file, **options):
     :param options: additional options, these override anything in file_path, eg. from terminal
     :return: boolean, whether or not files have been downloaded
     """
-    loader = yaml_or_json(str(config_file))
-    with open(config_file) as f:
-        try:
-            config_data = loader(f)
-        except (MarkedYAMLError, ValueError) as e:
-            logger.error('%s: %s', e.__class__.__name__, e)
-            raise GrablibError('error loading "{}"'.format(config_file))
+    if config_file.strip().startswith('{'):
+        # special case we assume raw json, note: this doesn't give a nicely formatted error if json is invalid
+        config_data = json.loads(config_file, object_pairs_hook=collections.OrderedDict)
+    else:
+        loader = yaml_or_json(str(config_file))
+        with open(config_file) as f:
+            try:
+                config_data = loader(f)
+            except (MarkedYAMLError, ValueError) as e:
+                logger.error('%s: %s', e.__class__.__name__, e)
+                raise GrablibError('error loading "{}"'.format(config_file))
 
     libs_info, minify_info, file_options = process_obj(config_data)
 

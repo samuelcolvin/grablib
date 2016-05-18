@@ -55,8 +55,8 @@ You can also call grablib from python:
 ```python
 import grablib
 
-grablib.grab('path/to/definitions.json|py')
+grablib.grab('path/to/definitions.json|yml')
 
 # or with options overridden
-grablib.grab('path/to/definitions.json|py', verbosity=3)
+grablib.grab('path/to/definitions.json|yml', overwrite=True)
 ```
