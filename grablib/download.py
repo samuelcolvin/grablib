@@ -50,15 +50,15 @@ class DownloadLibs(ProcessBase):
         logger.warning('Download finished: %d files downloaded, %d existing and ignored', self.downloaded, self.ignored)
 
     def _process_normal_file(self, url, dst):
-        path = self._get_new_path(url, dst)
-        exists, dest = self._generate_path(self.download_root, path)
+        path = self._file_path(url, dst)
+        exists, full_path = self._generate_path(self.download_root, path)
         if exists and not self.overwrite:
             logger.debug('file already exists: "%s" IGNORING', path)
             self.ignored += 1
             return
         logger.info('DOWNLOADING: %s', path)
         content = self._get_url(url)
-        self._write(dest, content)
+        self._write(full_path, content)
         logger.debug('Successfully downloaded %s\n', os.path.basename(path))
         self.downloaded += 1
 
@@ -78,15 +78,15 @@ class DownloadLibs(ProcessBase):
                 for regex_pattern, target in value.items():
                     if not re.match(regex_pattern, filepath):
                         continue
-                    new_path = self._get_new_path(filepath, target, regex_pattern)
-                    exists, dest = self._generate_path(self.download_root, new_path)
-                    logger.debug('    %s > %s based on regex %s', filepath, new_path, regex_pattern)
+                    path = self._file_path(filepath, target, regex_pattern)
+                    exists, full_path = self._generate_path(self.download_root, path)
+                    logger.debug('    %s > %s based on regex %s', filepath, path, regex_pattern)
                     if exists and not self.overwrite:
                         zignored += 1
-                        logger.debug('    file already exists: "%s" IGNORING', new_path)
+                        logger.debug('    file already exists: "%s" IGNORING', path)
                     else:
                         zcopied += 1
-                        self._write(dest, zipf.read(filepath))
+                        self._write(full_path, zipf.read(filepath))
                     target_found = True
                     break
                 if not target_found:
@@ -94,8 +94,7 @@ class DownloadLibs(ProcessBase):
         logger.info('%d files copied from zip archive, %d ignored as already exist', zcopied, zignored)
         self.downloaded += 1
 
-    @staticmethod
-    def _get_new_path(src_path, dest, regex='.*/(.+)$'):
+    def _file_path(self, src_path, dest, regex='.*/(.+)$'):
         """
         check src_path complies with regex and generate new filename
         """
@@ -108,8 +107,11 @@ class DownloadLibs(ProcessBase):
         elif len(m.groups()) > 0:
             new_fn = m.groups()[0]
         if new_fn:
-            dest = re.sub('{{ *filename *}}', new_fn, dest)
-        return dest
+            if dest.endswith('/'):
+                dest += '{filename}'
+            dest = re.sub(r'{{? *filename *}?}', new_fn, dest)
+        # remove starting slash so path can't be absolute
+        return dest.lstrip('/')
 
     def _setup_sites(self, sites):
         if sites is None:

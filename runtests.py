@@ -413,6 +413,21 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
                                         'Download finished: 1 files downloaded, 0 existing and ignored'])
 
     @mock.patch('requests.get')
+    def test_different_filenames(self, mock_requests_get):
+        mock_requests_get.side_effect = local_requests_get
+        json = """\
+        {
+          "http://wherever.com/moment.js": "x",
+          "http://wherever.com/bootstrap.css": "{ filename}",
+          "http://wherever.com/bootstrap.min.css": "whatever_{{filename }}",
+          "http://wherever.com/unicode.js": "/"
+        }
+        """
+        grablib.grab(json, download_root='test-download-dir')
+        wanted_files = {'x', 'bootstrap.css', 'whatever_bootstrap.min.css', 'unicode.js'}
+        self.assertEqual(set(os.listdir('test-download-dir')), wanted_files)
+
+    @mock.patch('requests.get')
     def test_minify_2_files(self, mock_requests_get):
         mock_requests_get.side_effect = local_requests_get
         self.file_write("""\
@@ -524,7 +539,6 @@ class LibraryTestCase(HouseKeepingMixin, unittest.TestCase):
         }
         """
         grablib.grab(json, download_root='test-download-dir')
-        # print '\n'.join(self.hdl.log)
         self.assertEqual(self.hdl.log, [
             'Downloading files to: test-download-dir',
             'DOWNLOADING ZIP: https://and-old-url.com/test_assets.zip...',

@@ -57,7 +57,7 @@ class MinifyLibs(ProcessBase):
                     content = self._minify_file(src)
                     files_combined += 1
                 else:
-                    for file_path, _ in self._search_paths(grablib_files, src):
+                    for file_path in self._search_paths(grablib_files, src):
                         full_file_path = os.path.join(self.download_root, file_path)
                         content = self._minify_file(full_file_path)
                         files_combined += 1
@@ -75,6 +75,21 @@ class MinifyLibs(ProcessBase):
             _, dst = self._generate_path(self.minified_root, dst)
             self._write(dst, final_content)
             logger.info('%d files combined to form "%s"', files_combined, dst)
+
+    def _search_paths(self, path_list, regexes):
+        """
+        Search paths for one or more regex and yield matching file names and the regex they matched.
+        The order of the returned files will match the order of regexes if possible.
+        :param path_list: list of paths to search
+        :param regexes: list (or single string) of regexes to search for
+        :yields: tuples (filepath, regex it matched)
+        """
+        if isinstance(regexes, basestring):
+            regexes = [regexes]
+        for regex in regexes:
+            for fn in path_list:
+                if re.match(regex, fn):
+                    yield fn
 
     def grablib_files(self):
         """
