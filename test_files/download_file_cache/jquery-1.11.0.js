@@ -1,2 +1,2 @@
-/*! jQuery JavaScript Library */
+/* jQuery JavaScript Library */
 $ = 'jQuery';
