@@ -3,20 +3,26 @@ language: python
 cache: pip
 
 python:
-  - "2.7"
-  - "3.4"
-  - "3.5"
+- '3.4'
+- '3.5'
+- '3.6-dev'
+- 'nightly'
+
+matrix:
+  allow_failures:
+  - python: '3.6-dev'
+  - python: 'nightly'
 
 install:
-  - pip install --upgrade pip
-  - pip install .
-  - pip install coverage codecov flake8 mock
+- pip install -U pip setuptools
+- pip install .
+- pip install coverage codecov flake8 mock
 
 script:
-  - coverage run --source=grablib setup.py test
-  - flake8 grablib/
-  - flake8 runtests.py
-  - grablib -V
+- coverage run --source=grablib setup.py test
+- flake8 grablib/
+- flake8 runtests.py
+- grablib -V
 
 after_success:
-  - codecov
+- codecov

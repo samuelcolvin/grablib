@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import os
 import re
 import shutil
@@ -8,10 +6,7 @@ import zipfile
 import requests
 from requests.exceptions import RequestException
 
-try:
-    from cStringIO import StringIO as IO
-except ImportError:
-    from io import BytesIO as IO
+from io import BytesIO as IO
 
 from .common import GrablibError, ProcessBase, logger, str
 
