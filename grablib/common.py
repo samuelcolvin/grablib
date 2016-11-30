@@ -75,21 +75,6 @@ class ProcessBase(object):
             logger.info('Overwrite set to %r' % overwrite)
         self.file_perm = file_permissions
 
-    @classmethod
-    def _generate_path(cls, *path_args):
-        """
-        Create path from args if the directory does not exist create it.
-        :param path_args: chunks of path
-        :return: tuple: (if the path already existed, the new path)
-        """
-        dest = os.path.join(*path_args)
-        if os.path.exists(dest):
-            return True, dest
-        dest_dir = os.path.dirname(dest)
-        if not os.path.exists(dest_dir):
-            os.makedirs(dest_dir)
-        return False, dest
-
     def _write(self, dest, content):
         try:
             content = content.encode()
@@ -99,3 +84,18 @@ class ProcessBase(object):
             f.write(content)
         if self.file_perm:
             os.chmod(dest, self.file_perm)
+
+
+def prepare_path(root, cls, *path_args):
+    """
+    Create path from args if the directory does not exist create it.
+    :param path_args: chunks of path
+    :return: tuple: (if the path already existed, the new path)
+    """
+    dest = os.path.join(*path_args)
+    if os.path.exists(dest):
+        return True, dest
+    dest_dir = os.path.dirname(dest)
+    if not os.path.exists(dest_dir):
+        os.makedirs(dest_dir)
+    return False, dest

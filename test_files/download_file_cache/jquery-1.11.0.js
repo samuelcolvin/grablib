@@ -1,2 +1,0 @@
-/* jQuery JavaScript Library */
-$ = 'jQuery';

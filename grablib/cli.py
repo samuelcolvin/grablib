@@ -13,13 +13,9 @@ click.disable_unicode_literals_warning = True
 @click.version_option(VERSION, '-V', '--version')
 @click.argument('action', type=click.Choice(['download', 'build']), default='download', required=False,
                 metavar='[download (default) / build]')
-@click.argument('config-file', type=click.Path(exists=True, dir_okay=False), default='grablib.json', required=False)
-@click.option('--overwrite/--no-overwrite', default=False,
-              help='Overwrite existing files, default is not to download a library if the file already exists')
-@click.option('-d', '--download-root', type=click.Path(exists=False, file_okay=False),
-              help='Root directory to put downloaded files in, defaults to "./static/".')
+@click.option('-f', '--config-file', type=click.Path(exists=True, dir_okay=False, file_okay=True), required=False)
 @click.option('-v', '--verbosity', type=click.Choice(['high', 'medium', 'low']), default='medium')
-def cli(action, config_file, overwrite, download_root, verbosity):
+def cli(action, config_file, verbosity):
     """
     Utility for defining then downloading and preprocessing external static files
     eg. Javascript, CSS.
@@ -27,7 +23,7 @@ def cli(action, config_file, overwrite, download_root, verbosity):
     setlogging(verbosity)
     try:
         # other actions are not yet implemented
-        grab(config_file, overwrite=overwrite, download_root=download_root)
+        grab(config_file=config_file)
     except GrablibError as e:
         if verbosity != 'high':
             click.secho('use "--verbosity high" for more details', fg='red')

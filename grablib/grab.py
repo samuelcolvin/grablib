@@ -1,61 +1,71 @@
 import collections
 import json
+import re
+from pathlib import Path
 
 import yaml
 from yaml.scanner import MarkedYAMLError
 
-from . import download, minify
-from .common import DEFAULT_OPTIONS, GrablibError, logger
+from .common import GrablibError, logger
+from .download import Downloader
+# from . import download, minify
 
 
-def grab(config_file, **options):
+YAML_MATCH = re.compile('grablib\.ya?ml')
+JSON_MATCH = re.compile('grablib\.json')
+STD_FILE_NAMES = [YAML_MATCH, JSON_MATCH]
+
+
+def yaml_or_json(file_path:  Path):
+    if YAML_MATCH.fullmatch(file_path.name):
+        logger.debug('Processing %s as a yaml file', file_path)
+        return yaml_load
+    elif JSON_MATCH.fullmatch(file_path.name):
+        logger.debug('Processing %s as a json file', file_path)
+        return json_load
+    else:
+        raise GrablibError('Unexpected extension for "{}", should be json or yml/yaml'.format(file_path))
+
+
+def find_config_file():
+    p = Path('.').resolve()
+    files = [x for x in p.iterdir() if x.is_file()]
+    for std_file_name in STD_FILE_NAMES:
+        try:
+            return next(f for f in files if std_file_name.fullmatch(f.name))
+        except StopIteration:
+            pass
+    raise GrablibError('Unable to find config file with standard name "grablib.yml" or "grablib.json" in the '
+                       'current working directory')
+
+
+def grab(*, config_file: str=None, download_root: str=None):
     """
     Process a file or json string defining files to download and what to do with them.
 
     :param config_file: relative path to file defining what to download
-    :param options: additional options, these override anything in file_path, eg. from terminal
-    :return: boolean, whether or not files have been downloaded
+    :param download_root: root_directory to download to
     """
-    if config_file.strip().startswith('{'):
-        # special case we assume raw json, note: this doesn't give a nicely formatted error if json is invalid
-        config_data = json.loads(config_file, object_pairs_hook=collections.OrderedDict)
+    if config_file:
+        config_path = Path(config_file).resolve()
     else:
-        loader = yaml_or_json(str(config_file))
-        with open(config_file) as f:
-            try:
-                config_data = loader(f)
-            except (MarkedYAMLError, ValueError) as e:
-                logger.error('%s: %s', e.__class__.__name__, e)
-                raise GrablibError('error loading "{}"'.format(config_file))
+        config_path = find_config_file()
+    loader = yaml_or_json(config_path)
+    with config_path.open() as f:
+        try:
+            config_data = loader(f)
+        except (MarkedYAMLError, ValueError) as e:
+            logger.error('%s: %s', e.__class__.__name__, e)
+            raise GrablibError('error loading "{}"'.format(config_file))
+    if download_root:
+        config_data['download_root'] = download_root
 
-    libs_info, minify_info, file_options = process_obj(config_data)
-
-    kwarg_options = options.copy()
-    options = DEFAULT_OPTIONS.copy()
-    options.update({k: v for k, v in file_options.items() if v is not None})
-    options.update({k: v for k, v in kwarg_options.items() if v is not None})
-    if libs_info:
-        download.DownloadLibs(libs_info, **options).download()
-    if minify_info:
-        minify.MinifyLibs(minify_info, **options).minify()
-
-
-def process_obj(data):
-    """
-    Takes a json object and extracts libs_info and options
-    """
-    options = {}
-    if 'libs' in data or 'minify' in data:
-        libs_info = data.get('libs', None)
-        minify_info = data.get('minify', None)
-
-        for k, v in data.items():
-            if k in DEFAULT_OPTIONS:
-                options[k] = v
-    else:
-        libs_info, minify_info = None, None
-        libs_info = data
-    return libs_info, minify_info, options
+    download = Downloader(**config_data)
+    download()
+    # if libs_info:
+    #     download.DownloadLibs(libs_info, **options).download()
+    # if minify_info:
+    #     minify.MinifyLibs(minify_info, **options).minify()
 
 
 def yaml_load(f):
@@ -73,14 +83,3 @@ def yaml_load(f):
 
 def json_load(f):
     return json.load(f, object_pairs_hook=collections.OrderedDict)
-
-
-def yaml_or_json(file_path):
-    if any(file_path.endswith(ext) for ext in ['.yaml', '.yml']):
-        logger.debug('Processing %s as a yaml file', file_path)
-        return yaml_load
-    elif file_path.endswith('.json'):
-        logger.debug('Processing %s as a json file', file_path)
-        return json_load
-    else:
-        raise GrablibError('Unexpected extension for "{}", should be json or yml/yaml'.format(file_path))
