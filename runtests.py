@@ -173,7 +173,7 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         self.tmp_file.flush()
 
         result = run_args('download', self.tmp_file.name)
-        self.assertEqual(result.exit_code, 1)
+        self.assertEqual(result.exit_code, 2)
         self.assertIn('should be json or yml/yaml', result.output)
 
         self.tmp_file.close()
@@ -184,12 +184,11 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
 
         self.file_write('{"http://code_404.js": "x"}')
         result = run_args('--download-root', 'test-download-dir', 'download', self.tmp_file.name)
-        self.assertEqual(result.exit_code, 1)
+        self.assertEqual(result.exit_code, 2)
         self.assertEqual(result.output, 'Downloading files to: test-download-dir\n'
                                         'DOWNLOADING: x\n'
                                         'use "--verbosity high" for more details\n'
-                                        'Error: \n'
-                                        'Downloading "http://code_404.js" to "x"\n'
+                                        'Error: Downloading "http://code_404.js" to "x"\n'
                                         '    URL: http://code_404.js\n'
                                         'Problem occurred during download, wrong status code: 404\n'
                                         '*** ABORTING ***\n')
@@ -199,12 +198,11 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         mock_requests_get.side_effect = local_requests_get
         self.file_write('{"http://xyz.com": "x"}')
         result = run_args('--download-root', 'test-download-dir', 'download', self.tmp_file.name)
-        self.assertEqual(result.exit_code, 1)
+        self.assertEqual(result.exit_code, 2)
         self.assertEqual(result.output, 'Downloading files to: test-download-dir\n'
                                         'DOWNLOADING: x\n'
                                         'use "--verbosity high" for more details\n'
-                                        'Error: \n'
-                                        'Downloading "http://xyz.com" to "x"\n'
+                                        'Error: Downloading "http://xyz.com" to "x"\n'
                                         '    URL: http://xyz.com\n'
                                         'Problem occurred during download: '
                                         'ConnectionError: file does not exist locally\n'
@@ -215,7 +213,7 @@ class CmdTestCase(HouseKeepingMixin, unittest.TestCase):
         mock_requests_get.side_effect = local_requests_get
         self.file_write('{"http://xyz.com": "x",}')
         result = run_args('--download-root', 'test-download-dir', 'download', self.tmp_file.name)
-        self.assertEqual(result.exit_code, 1)
+        self.assertEqual(result.exit_code, 2)
         # output is different for different version of python
         self.assertIn('line 1 column 24 (char 23', result.output)
 

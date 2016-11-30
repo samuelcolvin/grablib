@@ -18,7 +18,7 @@ install:
 
 script:
 - make lint
-- make test
+- coverage run setup.py test
 - grablib -V
 
 after_success:
