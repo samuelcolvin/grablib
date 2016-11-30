@@ -5,12 +5,6 @@ import click
 
 logger = logging.getLogger('grablib')
 
-try:
-    str = basestring
-except NameError:
-    # py3
-    str = str
-
 DEFAULT_OPTIONS = {
     'download_root': './static/',
     'minified_root': './static/minifed/',
@@ -48,6 +42,7 @@ def setlogging(verbosity='medium'):
         level_name = {'high': 'DEBUG', 'medium': 'INFO'}.get(verbosity, 'WARNING')
     level = getattr(logging, level_name)
     logger.setLevel(level)
+
 
 setlogging()
 
@@ -97,7 +92,7 @@ class ProcessBase(object):
 
     def _write(self, dest, content):
         try:
-            content = content.encode('utf8')
+            content = content.encode()
         except (UnicodeDecodeError, AttributeError):
             pass
         with open(dest, 'wb') as f:

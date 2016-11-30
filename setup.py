@@ -1,5 +1,4 @@
-#!/usr/bin/python
-import imp
+from importlib.machinery import SourceFileLoader
 import sys
 from setuptools import setup
 
@@ -14,7 +13,7 @@ if 'sdist' in sys.argv:
     long_description = pypandoc.convert(text, 'rst', format='md')
 
 # importing just this file avoids importing the full package with external dependencies which might not be installed
-version = imp.load_source('version', 'grablib/version.py')
+version = SourceFileLoader('version', 'grablib/version.py').load_module()
 
 setup(
     name='grablib',

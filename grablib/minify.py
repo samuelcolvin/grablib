@@ -5,7 +5,7 @@ import shutil
 from jsmin import jsmin
 from csscompressor import compress as cssmin
 
-from .common import ProcessBase, GrablibError, str, logger
+from .common import ProcessBase, GrablibError, logger
 
 MINIFY_LOOKUP = [
     (r'.js$', jsmin),
@@ -62,9 +62,6 @@ class MinifyLibs(ProcessBase):
                 if regexes:
                     for pattern, rep in regexes.items():
                         content = re.sub(pattern, rep, content)
-                if hasattr(content, 'decode'):
-                    # py2
-                    content = content.decode('utf8')
                 final_content += content.strip('\n') + '\n'
             final_content = final_content.rstrip('\n')
             if files_combined == 0:

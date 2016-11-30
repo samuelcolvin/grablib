@@ -15,16 +15,9 @@ import grablib
 from grablib.cli import cli
 from grablib.common import logger, setlogging
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
 
-try:
-    import mock
-except ImportError:
-    # python3
-    from unittest import mock
+from unittest import mock
 
 
 class GetStd(object):

@@ -8,7 +8,7 @@ from requests.exceptions import RequestException
 
 from io import BytesIO as IO
 
-from .common import GrablibError, ProcessBase, logger, str
+from .common import GrablibError, ProcessBase, logger
 
 
 class DownloadLibs(ProcessBase):

@@ -16,7 +16,7 @@ matrix:
 install:
 - pip install -U pip setuptools
 - pip install .
-- pip install coverage codecov flake8 mock
+- pip install coverage flake8
 
 script:
 - coverage run --source=grablib setup.py test
@@ -25,4 +25,5 @@ script:
 - grablib -V
 
 after_success:
-- codecov
+- ls -lha
+- bash <(curl -s https://codecov.io/bash)
