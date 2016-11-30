@@ -2,11 +2,10 @@ import os
 import re
 import shutil
 import zipfile
+from io import BytesIO as IO
 
 import requests
 from requests.exceptions import RequestException
-
-from io import BytesIO as IO
 
 from .common import GrablibError, ProcessBase, logger
 

@@ -2,10 +2,10 @@ import os
 import re
 import shutil
 
-from jsmin import jsmin
 from csscompressor import compress as cssmin
+from jsmin import jsmin
 
-from .common import ProcessBase, GrablibError, logger
+from .common import GrablibError, ProcessBase, logger
 
 MINIFY_LOOKUP = [
     (r'.js$', jsmin),

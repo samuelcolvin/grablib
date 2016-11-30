@@ -14,14 +14,11 @@ matrix:
   - python: 'nightly'
 
 install:
-- pip install -U pip setuptools
-- pip install .
-- pip install coverage flake8
+- make install
 
 script:
-- coverage run --source=grablib setup.py test
-- flake8 grablib/
-- flake8 runtests.py
+- make lint
+- make test
 - grablib -V
 
 after_success:

@@ -1,5 +1,6 @@
+import sys
+
 import click
-from click import ClickException
 
 from .common import GrablibError, setlogging
 from .grab import grab
@@ -28,7 +29,7 @@ def cli(action, config_file, overwrite, download_root, verbosity):
         # other actions are not yet implemented
         grab(config_file, overwrite=overwrite, download_root=download_root)
     except GrablibError as e:
-        msg = '\n{}'
         if verbosity != 'high':
             click.secho('use "--verbosity high" for more details', fg='red')
-        raise ClickException(click.style(msg.format(e), fg='red'))
+        click.secho('Error: %s' % e, fg='red')
+        sys.exit(2)

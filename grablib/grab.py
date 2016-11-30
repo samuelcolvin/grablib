@@ -1,11 +1,11 @@
-import json
 import collections
+import json
 
 import yaml
 from yaml.scanner import MarkedYAMLError
 
-from .common import GrablibError, logger, DEFAULT_OPTIONS
 from . import download, minify
+from .common import DEFAULT_OPTIONS, GrablibError, logger
 
 
 def grab(config_file, **options):
