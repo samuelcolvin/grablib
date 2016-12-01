@@ -10,7 +10,6 @@ from .build import Builder
 from .common import GrablibError, logger
 from .download import Downloader
 
-
 YAML_MATCH = re.compile('grablib\.ya?ml')
 JSON_MATCH = re.compile('grablib\.json')
 STD_FILE_NAMES = [YAML_MATCH, JSON_MATCH]

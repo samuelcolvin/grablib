@@ -30,14 +30,12 @@ class Builder:
 
             final_content, files_combined = '', 0
             for src in srcs:
-                regexes = {}
-                if not isinstance(src, str):
-                    # here we assume we have a 2 element list, first item being the src, second be a dict of regexes
-                    src, regexes = src
-                path = self._file_path(src)
+                if isinstance(src, str):
+                    src = {'src': src}
+                path = self._file_path(src['src'])
                 content = self._read_file(path, minify)
                 files_combined += 1
-                for pattern, rep in regexes.items():
+                for pattern, rep in src.get('replace', {}).items():
                     content = re.sub(pattern, rep, content)
                 final_content += '/* === {} === */\n{}\n'.format(path.name, content.strip('\n'))
 

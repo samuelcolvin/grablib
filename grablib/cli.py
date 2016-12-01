@@ -11,14 +11,14 @@ click.disable_unicode_literals_warning = True
 
 @click.command()
 @click.version_option(VERSION, '-V', '--version')
-@click.argument('action', type=click.Choice(['download', 'build']), default='download', required=False,
-                metavar='[download (default) / build]')
+@click.argument('action', type=click.Choice(['download', 'build']), required=False, metavar='[download / build]')
 @click.option('-f', '--config-file', type=click.Path(exists=True, dir_okay=False, file_okay=True), required=False)
 @click.option('-v', '--verbosity', type=click.Choice(['high', 'medium', 'low']), default='medium')
 def cli(action, config_file, verbosity):
     """
-    Utility for defining then downloading and preprocessing external static files
-    eg. Javascript, CSS.
+    Utility for defining then downloading and building external static files eg. Javascript, CSS.
+
+    Called with no arguments grablib will download, then build. You can also choose to only download or build.
     """
     setlogging(verbosity)
     try:

@@ -1,5 +1,6 @@
 import re
 import zipfile
+from collections import OrderedDict
 from io import BytesIO as IO
 from pathlib import Path
 
@@ -35,6 +36,7 @@ class Downloader:
         if aliases:
             self.aliases.update(aliases)
         self.downloaded = 0
+        self.session = requests.Session()
 
     def __call__(self):
         """
@@ -51,7 +53,9 @@ class Downloader:
                     self._process_normal_file(url, value)
             except GrablibError as e:
                 # create new exception to show which file download went wrong for
-                raise GrablibError('Downloading "%s" to "%s"\n    %s' % (url, value, e))
+                if isinstance(value, OrderedDict):
+                    value = dict(value)
+                raise GrablibError('Error downloading "{}" to "{}"'.format(url, value)) from e
         logger.info('Download finished: %d files downloaded', self.downloaded)
 
     def _process_normal_file(self, url, dst):
@@ -107,9 +111,10 @@ class Downloader:
             for name, value in names.items():
                 dest = dest.replace('{%s}' % name, value)
         # remove starting slash so path can't be absolute
-        dest = dest.lstrip(' /')
+        dest = dest.strip(' /')
         if not dest:
-            raise GrablibError('destination path must not resolve to be null')
+            logger.error('destination path must not resolve to be null')
+            raise GrablibError('bad path')
         new_path = self.download_root.joinpath(dest)
         new_path.relative_to(self.download_root)
         return new_path
@@ -121,15 +126,14 @@ class Downloader:
 
     def _get_url(self, url):
         try:
-            r = requests.get(url)
+            r = self.session.get(url)
         except RequestException as e:
-            raise GrablibError('URL: {}\n'
-                               'Problem occurred during download: {}: {}\n'
-                               '*** ABORTING ***'.format(url, e.__class__.__name__, e))
+            logger.error('Problem occurred during download: %s: %s', e.__class__.__name__, e)
+            raise GrablibError('request error') from e
         else:
             if r.status_code != 200:
-                raise GrablibError('URL: %s\nProblem occurred during download, wrong status code: %d\n*** ABORTING ***'
-                                   % (url, r.status_code))
+                logger.error('Wrong status code: %d', r.status_code)
+                raise GrablibError('Wrong status code')
             return r.content
 
     def _write(self, new_path: Path, data):
