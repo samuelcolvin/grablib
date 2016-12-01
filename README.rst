@@ -29,17 +29,24 @@ Define your static files thus: (``grablib.yml``)
         "bootstrap-sass-3.3.6/assets/(.+)$": "bootstrap-sass/"
 
       "GITHUB/codemirror/CodeMirror/5.8.0/lib/codemirror.js": "codemirror/"
-      # simple file to import and compile bootstrap from above, generally this would be in your code
-      "https://gist.githubusercontent.com/samuelcolvin/22116e988b70781696fcdecc597ca94f/raw/build_bootstrap.scss": "/"
+      # simple scss file to import and compile bootstrap from above,
+      # generally this would be in your code
+      # this file just reads `@import 'bootstrap-sass/stylesheets/bootstrap';`
+      "https://git.io/v1Z5J": "build_bootstrap.scss"
 
     debug: true
     build_root: "static/prod"
     build:
       cat:
+        # concatenate jquery and codemirror into "libraries.js"
+        # it won't et minified as debug is true, but without that it would
         "libraries.js":
           - "DL/js/jquery.js"
           - "DL/codemirror/codemirror.js"
       sass:
+        # compile all css, scss and sass files which don't start with _ into the
+        # css directory, here that will just be build_bootstrap.scss which will
+        # in this case contain the whole of bootstrap.
         "css": "DL/"
 
 Then download and build you static files with just:

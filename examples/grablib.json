@@ -6,7 +6,7 @@
       "bootstrap-sass-3.3.6/assets/(.+)$": "bootstrap-sass/"
     },
     "GITHUB/codemirror/CodeMirror/5.8.0/lib/codemirror.js": "codemirror/",
-    "https://gist.githubusercontent.com/samuelcolvin/22116e988b70781696fcdecc597ca94f/raw/build_bootstrap.scss": "/"
+    "https://git.io/v1Z5J": "build_bootstrap.scss"
   },
   "debug": true,
   "build_root": "static/prod",
