@@ -14,12 +14,12 @@ class Builder:
     main class for "building" assets eg. concatenating and minifying js and compiling sass
     """
 
-    def __init__(self, *, build_root, build, download_root: str=None, **data):
+    def __init__(self, *, build_root, build, download_root: str=None, debug=False):
         self.build_root = Path(build_root).absolute()
         self.build = build
         self.download_root = download_root and Path(download_root).resolve()
         self.files_built = 0
-        self.debug = build.get('debug', False)
+        self.debug = debug
 
     def __call__(self):
         cat_data = self.build.get('cat', None)

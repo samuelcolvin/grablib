@@ -31,6 +31,7 @@ download:
   # simple file to import and compile bootstrap from above, generally this would be in your code
   "https://gist.githubusercontent.com/samuelcolvin/22116e988b70781696fcdecc597ca94f/raw/build_bootstrap.scss": "/"
 
+debug: true
 build_root: "static/prod"
 build:
   cat:

@@ -34,7 +34,6 @@ def test_cat_debug(tmpworkdir):
         'grablib.yml': """
         build_root: "built_at"
         build:
-          debug: true
           cat:
             "libraries.js":
               - "./foo.js"
@@ -43,7 +42,7 @@ def test_cat_debug(tmpworkdir):
         'foo.js': 'var v = "foo js";\n    vindent = true;',
         'bar.js': 'var v = "bar js";',
     })
-    Grab().build()
+    Grab(debug=True).build()
     assert {
         'libraries.js':
             '/* === foo.js === */\n'
@@ -159,8 +158,8 @@ def test_sass_debug(tmpworkdir):
     mktree(tmpworkdir, {
         'grablib.yml': """
         build_root: "built_at"
+        debug: true
         build:
-          debug: true
           sass:
             "css": "sass_dir"
         """,

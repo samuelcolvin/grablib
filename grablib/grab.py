@@ -14,12 +14,13 @@ STD_FILE_NAMES = [re.compile('grablib\.ya?ml'), re.compile('grablib\.json')]
 
 
 class Grab:
-    def __init__(self, config_file: str=None, *, download_root: str=None):
+    def __init__(self, config_file: str=None, *, download_root: str=None, debug=None):
         """
         Process a file or json string defining files to download and what to do with them.
 
         :param config_file: relative path to file defining what to download
         :param download_root: root_directory to download to
+        :param debug: whether to run in debug mode
         """
         if config_file:
             config_path = Path(config_file).resolve()
@@ -34,6 +35,8 @@ class Grab:
                 raise GrablibError('error loading "{}"'.format(config_file))
         if download_root:
             self.config_data['download_root'] = download_root
+        if debug is not None:
+            self.config_data['debug'] = debug
 
     def download(self):
         if 'download' not in self.config_data:
