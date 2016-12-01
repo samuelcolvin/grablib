@@ -9,6 +9,8 @@ from .conftest import gettree, mktree
 def test_cat(tmpworkdir):
     mktree(tmpworkdir, {
         'grablib.yml': """
+        download:
+          http://whatever.com/file: file.txt
         build_root: "built_at"
         build:
           cat:
