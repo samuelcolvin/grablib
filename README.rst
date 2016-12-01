@@ -79,5 +79,5 @@ You can also call grablib from python:
 .. |license| image:: https://img.shields.io/pypi/l/grablib.svg
    :target: https://github.com/samuelcolvin/grablib
 .. _libsass: https://pypi.python.org/pypi/libsass/0.11.2
-.. _jsmin: https://bitbucket.org/dcs/jsmin/
+.. _jsmin: https://github.com/tikitu/jsmin
 .. _examples: examples

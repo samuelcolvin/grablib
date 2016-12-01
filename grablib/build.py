@@ -22,6 +22,9 @@ class Builder:
         self.debug = debug
 
     def __call__(self):
+        wipe_data = self.build.get('wipe', None)
+        if wipe_data:
+            self.wipe(wipe_data)
         cat_data = self.build.get('cat', None)
         if cat_data:
             self.cat(cat_data)
@@ -48,7 +51,7 @@ class Builder:
             if files_combined == 0:
                 logger.warning('no files found to form "%s"', dest)
                 continue
-            dest_path = self.build_root.joinpath(dest)
+            dest_path = self._dest_path(dest)
             dest_path.relative_to(self.build_root)
             self._write(dest_path, final_content)
             logger.info('%d files combined to form "%s"', files_combined, dest)
@@ -56,10 +59,31 @@ class Builder:
     def sass(self, data):
         for dest, src in data.items():
             src_path = self._file_path(src)
-            dest_path = self.build_root.joinpath(dest)
-            dest_path.relative_to(self.build_root)
+            dest_path = self._dest_path(dest)
             sass_gen = SassGenerator(src_path, dest_path, self.debug)
             sass_gen()
+
+    def wipe(self, paths):
+        if isinstance(paths, str):
+            paths = [paths]
+        for p in paths:
+            path = self._dest_path(p)
+            if not path.exists():
+                continue
+            if path == self.build_root:
+                # in this case we don't delete the directory itself, just some files
+                paths.extend(list(path.iterdir()))
+                continue
+            if path.is_dir():
+                shutil.rmtree(str(path))
+            else:
+                assert path.is_file()
+                path.unlink()
+
+    def _dest_path(self, p):
+        new_path = self.build_root.joinpath(p)
+        new_path.relative_to(self.build_root)
+        return new_path
 
     starts_download = re.compile('^(?:DOWNLOAD|DL)/')
 
@@ -74,7 +98,7 @@ class Builder:
     def _read_file(self, file_path: Path):
         content = file_path.read_text()
         if not self.debug and file_path.name.endswith('.js') and not file_path.name.endswith('.min.js'):
-            return jsmin(content)
+            return jsmin(content, quote_chars='\'"`')
         return content
 
     def _write(self, new_path: Path, data):
@@ -99,12 +123,9 @@ class SassGenerator:
     def __call__(self):
         start = datetime.now()
         self._errors, self._files_generated = 0, 0
-        # if self._out_dir.exists():
-        #     shutil.rmtree(str(self._out_dir.resolve()))
 
         if self._debug:
-            # self._out_dir.mkdir(parents=True)
-            self._out_dir.mkdir(parents=True, exist_ok=True)
+            self._out_dir.mkdir(parents=True)
             shutil.copytree(str(self._in_dir.resolve()), str(self._out_dir_src))
 
         self.process_directory(self._src_dir)

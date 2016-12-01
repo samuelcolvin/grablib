@@ -194,3 +194,48 @@ def test_sass_error(tmpworkdir):
     })
     with pytest.raises(GrablibError):
         Grab().build()
+
+
+def test_rm_all(tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': """
+        build_root: "built_at"
+        build:
+          wipe: '.'
+        """,
+        'built_at': {
+            'foo/bar.js': 'x',
+            'boom.txt': 'x',
+        }
+    })
+    Grab().build()
+    assert gettree(tmpworkdir.join('built_at')) == {}
+
+
+def test_rm_some(tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': """
+        build_root: "built_at"
+        build:
+          wipe:
+          - boom.txt
+          - another_dir
+          - doesnt_exist
+        """,
+        'built_at': {
+            'foo/bar.js': 'x',
+            'boom.txt': 'x',
+            'another_dir': {
+                'a.txt': 'x',
+                'b.txt': 'x',
+            },
+            'remain.txt': 'y',
+        }
+    })
+    Grab().build()
+    assert {
+        'foo': {
+            'bar.js': 'x'
+        },
+        'remain.txt': 'y',
+    } == gettree(tmpworkdir.join('built_at'))
