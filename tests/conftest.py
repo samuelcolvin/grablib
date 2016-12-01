@@ -40,7 +40,7 @@ def mktree(lp: LocalPath, d):
             _lp.write(content)
 
 
-def gettree(lp: LocalPath, max_len=80):
+def gettree(lp: LocalPath, max_len=120):
     """
     Get a dict representing the file tree for a directory
     """
