@@ -2,7 +2,6 @@ import re
 import zipfile
 from io import BytesIO as IO
 from pathlib import Path
-from typing import Dict, Union
 
 import requests
 from requests.exceptions import RequestException
@@ -22,8 +21,8 @@ class Downloader:
 
     def __init__(self, *,
                  download_root: str,
-                 download: Dict[str, Union[str, Dict]],
-                 aliases: Dict[str, str]=None,
+                 download: dict,
+                 aliases: dict=None,
                  **data):
         """
         :param download_root: path to download file to
