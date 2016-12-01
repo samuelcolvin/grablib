@@ -46,7 +46,7 @@ def gettree(lp: LocalPath, max_len=120):
     """
     assert lp.check()
     if lp.isdir():
-        return {df.basename: gettree(df) for df in lp.listdir()}
+        return {df.basename: gettree(df, max_len=max_len) for df in lp.listdir()}
     elif lp.isfile():
         content = lp.read_text('utf8')
         if max_len and len(content) > max_len:

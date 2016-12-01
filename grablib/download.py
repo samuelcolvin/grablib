@@ -15,7 +15,8 @@ ALIASES = {
     'GITHUB': 'https://raw.githubusercontent.com',
     'CDNJS': 'http://cdnjs.cloudflare.com/ajax/libs',
 }
-ZIP_FILE_REF = ':root'
+ZIP_VALUE_REF = ':zip-lookup'
+ZIP_RAW_REF = ':zip-raw'
 
 
 class Downloader:
@@ -39,6 +40,7 @@ class Downloader:
         self._aliases = ALIASES.copy()
         aliases and self._aliases.update(aliases)
         self._downloaded = 0
+        self._skipped = 0
         self._lock_file = lock and Path(lock)
         self._new_lock = []
         self._current_lock = {}
@@ -64,12 +66,15 @@ class Downloader:
                     value = dict(value)
                 raise GrablibError('Error downloading "{}" to "{}"'.format(url, value)) from e
         self._save_lock()
-        logger.info('Download finished: %d files downloaded', self._downloaded)
+        logger.info('Download finished: %d files downloaded, %d existing and ignored', self._downloaded, self._skipped)
 
     def _process_normal_file(self, url, dst):
         new_path = self._file_path(url, dst, regex=r'/(?P<filename>[^/]+)$')
-        lock_hash, unchanged = self._get_file_hash(url, new_path)
+        lock_hash, unchanged = self._file_exists_unchanged(url, new_path)
         if unchanged:
+            name, lock_hash = self._current_lock.get(url)
+            self._add_to_lock(url, name, lock_hash)
+            self._skipped += 1
             logger.debug('%s already exists unchanged, not downloading', url)
             return
 
@@ -82,23 +87,40 @@ class Downloader:
         self._write(new_path, content, url)
         self._downloaded += 1
 
-    def _get_file_hash(self, url, path: Path):
-        hash_name = self._current_lock.get(url)
-        if not hash_name:
+    def _file_exists_unchanged(self, url, path: Path):
+        name_hash = self._current_lock.get(url)
+        if not name_hash:
             return None, False
-        lock_hash, name = hash_name
+        name, lock_hash = name_hash
         if name != str(path.relative_to(self.download_root)):
             return lock_hash, False
         file_hash = self._path_hash(path)
         return lock_hash, file_hash == lock_hash
 
     def _process_zip(self, url, value):
+        value_hash = self._data_hash(json.dumps(value, sort_keys=True).encode())
+        lock_hash, unchanged = self._zip_exists_unchanged(url, value_hash)
+        if unchanged:
+            for name, lock_hash in self._current_lock.get(url):
+                self._add_to_lock(url, name, lock_hash)
+            self._skipped += 1
+            logger.debug('%s already exists unchanged, not downloading', url)
+            return
         logger.info('downloading zip: %s...', url)
         content = self._get_url(url)
+        remote_hash = self._data_hash(content)
+        if lock_hash and remote_hash != lock_hash:
+            logger.error('Security warning: hash of remote file %s has changed!', url)
+            raise GrablibError('remote hash mismatch')
+        self._add_to_lock(url, ZIP_VALUE_REF, value_hash)
+        self._add_to_lock(url, ZIP_RAW_REF, remote_hash)
+        zcopied = self._extract_zip(url, content, value)
+        logger.info('%d files copied from zip archive', zcopied)
+        self._downloaded += 1
+
+    def _extract_zip(self, url, content, value):
         zipinmemory = IO(content)
         zcopied = 0
-        data = json.dumps(value, sort_keys=True).encode()
-        self._add_to_lock(self._data_hash(data), url, ZIP_FILE_REF)
         with zipfile.ZipFile(zipinmemory) as zipf:
             logger.debug('%d file in zip archive', len(zipf.namelist()))
 
@@ -125,8 +147,25 @@ class Downloader:
                     break
                 if not target_found:
                     logger.debug('no target found')
-        logger.info('%d files copied from zip archive', zcopied)
-        self._downloaded += 1
+            return zcopied
+
+    def _zip_exists_unchanged(self, url, value_hash):
+        name_hashes = self._current_lock.get(url)
+        zip_hash = None
+        if not name_hashes:
+            return zip_hash, False
+        found_error = False
+        for name, lock_hash in name_hashes:
+            if name == ZIP_RAW_REF:
+                zip_hash = lock_hash
+                continue
+            if name == ZIP_VALUE_REF:
+                file_hash = value_hash
+            else:
+                file_hash = self._path_hash(self.download_root.joinpath(name))
+            if file_hash != lock_hash:
+                found_error = True
+        return zip_hash, not found_error and zip_hash is not None
 
     def _file_path(self, src_path, dest, regex):
         """
@@ -170,10 +209,14 @@ class Downloader:
         new_path.parent.mkdir(parents=True, exist_ok=True)
         new_path.write_bytes(data)
         h = self._path_hash(new_path)
-        self._add_to_lock(h, url, str(new_path.relative_to(self.download_root)))
+        self._add_to_lock(url, str(new_path.relative_to(self.download_root)), h)
 
-    def _add_to_lock(self, _hash: str, url: str, path_name: str):
-        self._new_lock.append((_hash, url, path_name))
+    def _add_to_lock(self, url: str, name: str, _hash: str):
+        self._new_lock.append({
+            'url': url,
+            'name': name,
+            'hash': _hash,
+        })
 
     def _path_hash(self, path: Path):
         if not path.exists():
@@ -188,8 +231,8 @@ class Downloader:
         if self._lock_file and self._lock_file.exists():
             with self._lock_file.open() as f:
                 for line in f:
-                    md5, url, name = line.rstrip('\n').split(' ')
-                    v = md5, name
+                    _hash, url, name = line.rstrip('\n').split(' ')
+                    v = name, _hash
                     existing_v = self._current_lock.get(url)
                     if existing_v is None:
                         self._current_lock[url] = v
@@ -201,5 +244,5 @@ class Downloader:
     def _save_lock(self):
         if self._lock_file is None:
             return
-        self._new_lock.sort(key=lambda v: (v[1], v[2]))
-        self._lock_file.write_text('\n'.join(' '.join(v) for v in self._new_lock))
+        self._new_lock.sort(key=lambda v: (v['url'], v['name']))
+        self._lock_file.write_text('\n'.join('{hash} {url} {name}'.format(**v) for v in self._new_lock))

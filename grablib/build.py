@@ -14,7 +14,7 @@ class Builder:
     main class for "building" assets eg. concatenating and minifying js and compiling sass
     """
 
-    def __init__(self, *, build_root, build, download_root: str=None, debug=False):
+    def __init__(self, *, build_root, build, download_root: str=None, debug=False, **data):
         self.build_root = Path(build_root).absolute()
         self.build = build
         self.download_root = download_root and Path(download_root).resolve()
