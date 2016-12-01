@@ -10,9 +10,7 @@ from .build import Builder
 from .common import GrablibError, logger
 from .download import Downloader
 
-YAML_MATCH = re.compile('grablib\.ya?ml')
-JSON_MATCH = re.compile('grablib\.json')
-STD_FILE_NAMES = [YAML_MATCH, JSON_MATCH]
+STD_FILE_NAMES = [re.compile('grablib\.ya?ml'), re.compile('grablib\.json')]
 
 
 class Grab:
@@ -39,24 +37,24 @@ class Grab:
 
     def download(self):
         if 'download' not in self.config_data:
-            logger.warning('download called with no "download" info in config data')
+            logger.warning('download called with no "download" info available')
             return
         download = Downloader(**self.config_data)
         download()
 
     def build(self):
         if 'build' not in self.config_data:
-            logger.warning('build called with no "build" info in config data')
+            logger.warning('build called with no "build" info available')
             return
         build = Builder(**self.config_data)
         build()
 
     @classmethod
     def yaml_or_json(cls, file_path:  Path):
-        if YAML_MATCH.fullmatch(file_path.name):
+        if file_path.name.endswith(('.yml', '.yaml')):
             logger.debug('Processing %s as a yaml file', file_path)
             return cls.yaml_load
-        elif JSON_MATCH.fullmatch(file_path.name):
+        elif file_path.name.endswith('.json'):
             logger.debug('Processing %s as a json file', file_path)
             return cls.json_load
         else:

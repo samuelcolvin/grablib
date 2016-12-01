@@ -1,0 +1,12 @@
+download_root: static_libs
+download:
+  'https://raw.github.com/twbs/bootstrap/v3.3.5/dist/css/bootstrap.min.css': 'css/'
+  'https://raw.github.com/twbs/bootstrap/v3.3.5/dist/css/bootstrap-theme.min.css': 'css/'
+  'https://raw.github.com/twbs/bootstrap/v3.3.5/dist/js/bootstrap.min.js': '/'
+  'http://code.jquery.com/jquery-1.11.0.min.js': 'jquery.min.js'
+  'https://github.com/makeusabrew/bootbox/releases/download/v4.2.0/bootbox.min.js': '/'
+  'http://malsup.github.io/min/jquery.form.min.js': '/'
+  'https://raw.github.com/ccampbell/mousetrap/1.4.6/mousetrap.min.js': '/'
+  'https://github.com/twbs/bootstrap-sass/archive/v3.3.6.zip':
+    'bootstrap-sass-3.3.6/assets/(fonts/bootstrap/.+)': ''
+    'bootstrap-sass-3.3.6/assets/(.+)$': 'bootstrap-sass/'

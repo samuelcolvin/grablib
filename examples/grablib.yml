@@ -1,0 +1,19 @@
+download_root: "static/libs"
+download:
+  "http://code.jquery.com/jquery-1.11.3.js": "js/jquery.js"
+  "https://github.com/twbs/bootstrap-sass/archive/v3.3.6.zip":
+    "bootstrap-sass-3.3.6/assets/(fonts/bootstrap/.+)": ""
+    "bootstrap-sass-3.3.6/assets/(.+)$": "bootstrap-sass/"
+
+  "GITHUB/codemirror/CodeMirror/5.8.0/lib/codemirror.js": "codemirror/"
+  # simple file to import and compile bootstrap from above, generally this would be in your code
+  "https://gist.githubusercontent.com/samuelcolvin/22116e988b70781696fcdecc597ca94f/raw/build_bootstrap.scss": "/"
+
+build_root: "static/prod"
+build:
+  cat:
+    "libraries.js":
+      - "DL/js/jquery.js"
+      - "DL/codemirror/codemirror.js"
+  sass:
+    "css": "DL/"
