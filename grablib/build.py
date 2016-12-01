@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 
 from jsmin import jsmin
+
 from .common import GrablibError, logger
 
 

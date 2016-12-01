@@ -3,7 +3,7 @@ import sys
 import click
 
 from .common import GrablibError, setlogging
-from .grab import grab
+from .grab import Grab
 from .version import VERSION
 
 click.disable_unicode_literals_warning = True
@@ -22,8 +22,11 @@ def cli(action, config_file, verbosity):
     """
     setlogging(verbosity)
     try:
-        # other actions are not yet implemented
-        grab(config_file=config_file)
+        grab = Grab(config_file)
+        if action in {'download', None}:
+            grab.download()
+        if action in {'build', None}:
+            grab.build()
     except GrablibError as e:
         if verbosity != 'high':
             click.secho('use "--verbosity high" for more details', fg='red')

@@ -1,18 +1,8 @@
 import logging
-import os
 
 import click
-from pathlib import Path
 
 logger = logging.getLogger('grablib')
-
-DEFAULT_OPTIONS = {
-    'download_root': './static/',
-    'minified_root': './static/minifed/',
-    'overwrite': False,
-    'file_permissions': None,
-    'sites': None,
-}
 
 
 class ClickHandler(logging.Handler):

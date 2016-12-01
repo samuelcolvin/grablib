@@ -1,5 +1,6 @@
 from pathlib import Path
-import grablib
+
+from grablib import Grab
 
 from .conftest import gettree, mktree
 
@@ -24,13 +25,13 @@ def request_fixture(url, **kwargs):
 
 def test_simple_download(mocker, tmpworkdir):
     mktree(tmpworkdir, {
-        'grablib.json': '{"http://wherever.com/moment.js": "x"}'
+        'grablib.json': '{"download": {"http://wherever.com/moment.js": "x"}}'
     })
     mock_requests_get = mocker.patch('grablib.download.requests.get')
     mock_requests_get.return_value = MockResponse()
-    grablib.grab('grablib.json', download_root='test-download-dir')
+    Grab(download_root='test-download-dir').download()
     assert gettree(tmpworkdir) == {
-        'grablib.json': '{"http://wherever.com/moment.js": "x"}',
+        'grablib.json': '{"download": {"http://wherever.com/moment.js": "x"}}',
         'test-download-dir': {'x': 'response text'},
     }
 
@@ -41,11 +42,13 @@ def test_zip_download(mocker, tmpworkdir):
     mktree(tmpworkdir, {
         'grablib.json': """
     {
-      "https://any-old-url.com/test_assets.zip":
-      {
-        "test_assets/assets/(.+)": "subdirectory/{{ filename }}"
+      "download": {
+        "https://any-old-url.com/test_assets.zip":
+        {
+          "test_assets/assets/(.+)": "subdirectory/{filename}"
+        }
       }
     }
     """})
-    grablib.grab('grablib.json', download_root='test-download-dir')
+    Grab('grablib.json', download_root='test-download-dir').download()
     assert gettree(tmpworkdir.join('test-download-dir')) == {'subdirectory': {'b.txt': 'b\n', 'a.txt': 'a\n'}}
