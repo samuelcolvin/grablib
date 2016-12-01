@@ -20,7 +20,6 @@ def test_invalid_json(tmpworkdir):
     result = CliRunner().invoke(cli, ['download', '-f', 'grablib.json'])
     assert result.exit_code == 2
     assert result.output == ('JSONDecodeError: Expecting value: line 1 column 1 (char 0)\n'
-                             'use "--verbosity high" for more details\n'
                              'Error: error loading "grablib.json"\n')
 
 

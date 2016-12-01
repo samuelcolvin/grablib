@@ -33,7 +33,9 @@ def test_simple(mocker, tmpworkdir):
     })
     mock_requests_get = mocker.patch('grablib.download.requests.Session.get')
     mock_requests_get.return_value = MockResponse()
-    Grab(download_root='test-download-dir').download()
+    grab = Grab(download_root='test-download-dir')
+    grab.download()
+    grab.build()
     assert gettree(tmpworkdir) == {
         'grablib.json': '{"download": {"http://wherever.com/moment.js": "x"}}',
         'test-download-dir': {'x': 'response text'},
@@ -128,3 +130,18 @@ def test_download_error(mocker, tmpworkdir):
     with pytest.raises(GrablibError) as excinfo:
         Grab().download()
     assert excinfo.value.args == ('Error downloading "https://www.whatever.com/foo.js" to "js/"',)
+
+
+def test_no_standard_file(tmpworkdir):
+    with pytest.raises(GrablibError) as excinfo:
+        Grab(download_root='test-download-dir')
+    assert excinfo.value.args[0].startswith('Unable to find config file with standard name "grablib.yml" or')
+
+
+def test_wrong_extension(tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.notjson': '{"download": {"http://wherever.com/moment.js": "x"}}'
+    })
+    with pytest.raises(GrablibError) as excinfo:
+        Grab('grablib.notjson', download_root='test-download-dir')
+    assert excinfo.value.args[0] == 'Unexpected extension for "grablib.notjson", should be json or yml/yaml'

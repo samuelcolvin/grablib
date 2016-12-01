@@ -58,7 +58,7 @@ class Grab:
             logger.debug('Processing %s as a json file', file_path)
             return cls.json_load
         else:
-            raise GrablibError('Unexpected extension for "{}", should be json or yml/yaml'.format(file_path))
+            raise GrablibError('Unexpected extension for "{}", should be json or yml/yaml'.format(file_path.name))
 
     @staticmethod
     def find_config_file():

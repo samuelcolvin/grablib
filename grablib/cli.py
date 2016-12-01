@@ -28,7 +28,5 @@ def cli(action, config_file, verbosity):
         if action in {'build', None}:
             grab.build()
     except GrablibError as e:
-        if verbosity != 'high':
-            click.secho('use "--verbosity high" for more details', fg='red')
         click.secho('Error: %s' % e, fg='red')
         sys.exit(2)

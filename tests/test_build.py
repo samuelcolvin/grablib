@@ -54,6 +54,19 @@ def test_cat_debug(tmpworkdir):
     } == gettree(tmpworkdir.join('built_at'))
 
 
+def test_cat_none(tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': """
+        build_root: "built_at"
+        build:
+          cat:
+            "libs.min.js": []
+        """
+    })
+    Grab().build()
+    assert tmpworkdir.join('built_at').check() is False
+
+
 def test_cat_src_wrong(tmpworkdir):
     mktree(tmpworkdir, {
         'grablib.yml': """
