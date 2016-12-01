@@ -1,3 +1,4 @@
+import hashlib
 import re
 import zipfile
 from collections import OrderedDict
@@ -36,6 +37,7 @@ class Downloader:
         if aliases:
             self.aliases.update(aliases)
         self.downloaded = 0
+        self._new_lock = []
         self.session = requests.Session()
 
     def __call__(self):
@@ -56,13 +58,14 @@ class Downloader:
                 if isinstance(value, OrderedDict):
                     value = dict(value)
                 raise GrablibError('Error downloading "{}" to "{}"'.format(url, value)) from e
+        self._save_lock()
         logger.info('Download finished: %d files downloaded', self.downloaded)
 
     def _process_normal_file(self, url, dst):
         new_path = self._file_path(url, dst, regex=r'/(?P<filename>[^/]+)$')
         logger.info('downloading: %s > %s...', url, new_path.relative_to(self.download_root))
         content = self._get_url(url)
-        self._write(new_path, content)
+        self._write(new_path, content, url)
         self.downloaded += 1
 
     def _process_zip(self, url, value):
@@ -91,7 +94,7 @@ class Downloader:
                         new_path = self._file_path(filepath, target, regex=regex_pattern)
                         logger.debug('%s > %s based on regex %s',
                                      filepath, new_path.relative_to(self.download_root), regex_pattern)
-                        self._write(new_path, zipf.read(filepath))
+                        self._write(new_path, zipf.read(filepath), url)
                         zcopied += 1
                     break
                 if not target_found:
@@ -137,6 +140,13 @@ class Downloader:
                 raise GrablibError('Wrong status code')
             return r.content
 
-    def _write(self, new_path: Path, data):
+    def _write(self, new_path: Path, data: bytes, url: str):
         new_path.parent.mkdir(parents=True, exist_ok=True)
         new_path.write_bytes(data)
+        m = hashlib.md5(data)
+        self._new_lock.append((m.hexdigest(), url, str(new_path.relative_to(self.download_root))))
+
+    def _save_lock(self):
+        self._new_lock.sort(key=lambda v: (v[1], v[2]))
+        path = Path('./grablib.lock')
+        path.write_text('\n'.join(' '.join(v) for v in self._new_lock))
