@@ -6,7 +6,7 @@ from pathlib import Path
 import sass
 from jsmin import jsmin
 
-from .common import GrablibError, logger
+from .common import GrablibError, main_logger, progress_logger
 
 
 class Builder:
@@ -32,6 +32,8 @@ class Builder:
         sass_data and self.sass(sass_data)
 
     def cat(self, data):
+        start = datetime.now()
+        total_files_combined = 0
         for dest, srcs in data.items():
             if not isinstance(srcs, list):
                 raise GrablibError('concatenating: source files should be a list')
@@ -48,12 +50,16 @@ class Builder:
                 final_content += '/* === {} === */\n{}\n'.format(path.name, content.strip('\n'))
 
             if files_combined == 0:
-                logger.warning('no files found to form "%s"', dest)
+                main_logger.warning('no files found to form "%s"', dest)
                 continue
             dest_path = self._dest_path(dest)
             dest_path.relative_to(self.build_root)
             self._write(dest_path, final_content)
-            logger.info('%d files combined to form "%s"', files_combined, dest)
+            total_files_combined += files_combined
+            progress_logger.info('%d files combined to form "%s"', files_combined, dest)
+
+        time_taken = (datetime.now() - start).total_seconds() * 1000
+        main_logger.info('%d files concatenated in %0.0fms', total_files_combined, time_taken)
 
     def sass(self, data):
         for dest, src in data.items():
@@ -65,6 +71,7 @@ class Builder:
     def wipe(self, paths):
         if isinstance(paths, str):
             paths = [paths]
+        count = 0
         for p in paths:
             path = self._dest_path(p)
             if not path.exists():
@@ -75,9 +82,12 @@ class Builder:
                 continue
             if path.is_dir():
                 shutil.rmtree(str(path))
+                count += 1
             else:
                 assert path.is_file()
                 path.unlink()
+                count += 1
+        main_logger.info('%d paths deleted', count)
 
     def _dest_path(self, p):
         new_path = self.build_root.joinpath(p)
@@ -129,9 +139,12 @@ class SassGenerator:
 
         self.process_directory(self._src_dir)
         time_taken = (datetime.now() - start).total_seconds() * 1000
-        if self._errors:
-            raise GrablibError('%d errors building sass' % self._errors)
-        logger.info('%d css files generated in %0.0fms, %d errors', self._files_generated, time_taken, self._errors)
+        if not self._errors:
+            main_logger.info('%d css files generated in %0.0fms, 0 errors', self._files_generated, time_taken)
+        else:
+            main_logger.error('%d css files generated in %0.0fms, %d errors',
+                              self._files_generated, time_taken, self._errors)
+            raise GrablibError('sass errors')
 
     def process_directory(self, d: Path):
         assert d.is_dir()
@@ -157,7 +170,7 @@ class SassGenerator:
         if self._debug:
             map_path = css_path.with_suffix('.map')
 
-        logger.debug('%s ▶ %s', rel_path, css_path.relative_to(self._out_dir))
+        progress_logger.info('%s ▶ %s', rel_path, css_path.relative_to(self._out_dir))
         css = self.generate_css(f, map_path)
         if not css:
             return
@@ -183,4 +196,4 @@ class SassGenerator:
             )
         except sass.CompileError as e:
             self._errors += 1
-            logger.error('"%s", compile error: %s', f, e)
+            main_logger.error('"%s", compile error: %s', f, e)

@@ -9,7 +9,7 @@ from pathlib import Path
 import requests
 from requests.exceptions import RequestException
 
-from .common import GrablibError, logger
+from .common import GrablibError, main_logger, progress_logger
 
 ALIASES = {
     'GITHUB': 'https://raw.githubusercontent.com',
@@ -50,7 +50,7 @@ class Downloader:
         """
         perform download and save.
         """
-        logger.info('Downloading files to: %s', self.download_root)
+        main_logger.info('downloading files to: %s', self.download_root)
 
         self._read_lock()
         for url_base, value in self.download.items():
@@ -66,7 +66,8 @@ class Downloader:
                     value = dict(value)
                 raise GrablibError('Error downloading "{}" to "{}"'.format(url, value)) from e
         self._save_lock()
-        logger.info('Download finished: %d files downloaded, %d existing and ignored', self._downloaded, self._skipped)
+        main_logger.info('Download finished: %d files downloaded, %d existing and ignored',
+                         self._downloaded, self._skipped)
 
     def _process_normal_file(self, url, dst):
         new_path = self._file_path(url, dst, regex=r'/(?P<filename>[^/]+)$')
@@ -74,14 +75,14 @@ class Downloader:
         if unchanged:
             self._add_to_lock(url, *self._current_lock[url])
             self._skipped += 1
-            logger.debug('%s already exists unchanged, not downloading', url)
+            progress_logger.debug('%s already exists unchanged, not downloading', url)
             return
 
-        logger.info('downloading: %s > %s...', url, new_path.relative_to(self.download_root))
+        progress_logger.info('downloading: %s > %s...', url, new_path.relative_to(self.download_root))
         content = self._get_url(url)
         remote_hash = self._data_hash(content)
         if lock_hash and remote_hash != lock_hash:
-            logger.error('Security warning: hash of remote file %s has changed!', url)
+            progress_logger.error('Security warning: hash of remote file %s has changed!', url)
             raise GrablibError('remote hash mismatch')
         self._write(new_path, content, url)
         self._downloaded += 1
@@ -102,49 +103,48 @@ class Downloader:
         if unchanged:
             [self._add_to_lock(url, name, lock_hash) for name, lock_hash in self._current_lock[url]]
             self._skipped += 1
-            logger.debug('%s already exists unchanged, not downloading', url)
+            progress_logger.debug('%s already exists unchanged, not downloading', url)
             return
-        logger.info('downloading zip: %s...', url)
+        progress_logger.info('downloading zip: %s...', url)
         content = self._get_url(url)
         remote_hash = self._data_hash(content)
         if lock_hash and remote_hash != lock_hash:
-            logger.error('Security warning: hash of remote file %s has changed!', url)
+            progress_logger.error('Security warning: hash of remote file %s has changed!', url)
             raise GrablibError('remote hash mismatch')
         self._add_to_lock(url, ZIP_VALUE_REF, value_hash)
         self._add_to_lock(url, ZIP_RAW_REF, remote_hash)
         zcopied = self._extract_zip(url, content, value)
-        logger.info('%d files copied from zip archive', zcopied)
+        progress_logger.info('%d files copied from zip archive', zcopied)
         self._downloaded += 1
 
     def _extract_zip(self, url, content, value):
         zipinmemory = IO(content)
         zcopied = 0
         with zipfile.ZipFile(zipinmemory) as zipf:
-            logger.debug('%d files in zip archive', len(zipf.namelist()))
+            progress_logger.debug('%d files in zip archive', len(zipf.namelist()))
 
             for filepath in zipf.namelist():
                 if filepath.endswith('/'):
                     continue
                 target_found = False
-                logger.debug('searching for target for %s...', filepath)
                 for regex_pattern, targets in value.items():
                     if not re.match(regex_pattern, filepath):
                         continue
                     target_found = True
                     if targets is None:
-                        logger.debug('target null, skipping')
+                        progress_logger.debug('target null, skipping')
                         break
                     if isinstance(targets, str):
                         targets = [targets]
                     for target in targets:
                         new_path = self._file_path(filepath, target, regex=regex_pattern)
-                        logger.debug('%s > %s based on regex %s',
-                                     filepath, new_path.relative_to(self.download_root), regex_pattern)
+                        progress_logger.debug('"%s": "%s" > "%s"',
+                                              regex_pattern, filepath, new_path.relative_to(self.download_root))
                         self._write(new_path, zipf.read(filepath), url)
                         zcopied += 1
                     break
                 if not target_found:
-                    logger.debug('no target found')
+                    progress_logger.debug('no target found for "%s"', filepath)
             return zcopied
 
     def _zip_exists_unchanged(self, url, value_hash):
@@ -180,7 +180,7 @@ class Downloader:
         # remove starting slash so path can't be absolute
         dest = dest.strip(' /')
         if not dest:
-            logger.error('destination path must not resolve to be null')
+            progress_logger.error('destination path must not resolve to be null')
             raise GrablibError('bad path')
         new_path = self.download_root.joinpath(dest)
         new_path.relative_to(self.download_root)
@@ -195,11 +195,11 @@ class Downloader:
         try:
             r = self._session.get(url)
         except RequestException as e:
-            logger.error('Problem occurred during download: %s: %s', e.__class__.__name__, e)
+            progress_logger.error('Problem occurred during download: %s: %s', e.__class__.__name__, e)
             raise GrablibError('request error') from e
         else:
             if r.status_code != 200:
-                logger.error('Wrong status code: %d', r.status_code)
+                progress_logger.error('Wrong status code: %d', r.status_code)
                 raise GrablibError('Wrong status code')
             return r.content
 

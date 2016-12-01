@@ -23,33 +23,36 @@ Define your static files thus: (``grablib.yml``)
 
 .. code:: yaml
 
-    download_root: "static/libs"
+    download_root: 'static/libs'
     download:
-      "http://code.jquery.com/jquery-1.11.3.js": "js/jquery.js"
-      "https://github.com/twbs/bootstrap-sass/archive/v3.3.6.zip":
-        "bootstrap-sass-3.3.6/assets/(.+)$": "bootstrap-sass/"
+      'http://code.jquery.com/jquery-1.11.3.js': 'js/jquery.js'
+      'https://github.com/twbs/bootstrap-sass/archive/v3.3.6.zip':
+        'bootstrap-sass-3.3.6/assets/(.+)$': 'bootstrap-sass/'
 
-      "GITHUB/codemirror/CodeMirror/5.8.0/lib/codemirror.js": "codemirror/"
+      'GITHUB/codemirror/CodeMirror/5.8.0/lib/codemirror.js': 'codemirror/'
       # simple scss file to import and compile bootstrap from above,
       # generally this would be in your code
-      # this file just reads `@import 'bootstrap-sass/stylesheets/bootstrap';`
-      "https://git.io/v1Z5J": "build_bootstrap.scss"
+      # this file just reads "@import 'bootstrap-sass/stylesheets/bootstrap';"
+      'https://git.io/v1Z5J': 'build_bootstrap.scss'
 
     debug: true
-    build_root: "static/prod"
+    build_root: 'static/prod'
     build:
+      # delete the entire static/prod directory before building, this is required for sass,
+      # and generally safer
+      wipe: '.'
       cat:
         # concatenate jquery and codemirror into "libraries.js"
         # it won't get minified as debug is true, but without that it would
-        "libraries.js":
-          - "DL/js/jquery.js"
-          - "DL/codemirror/codemirror.js"
+        'libraries.js':
+          - 'DL/js/jquery.js'
+          - 'DL/codemirror/codemirror.js'
       sass:
         # compile all css, scss and sass files which don't start with _ from the "download_root"
         # into the "css" directory, here that will just be build_bootstrap.scss which will
         # build the whole of bootstrap.
         # debug: true means you'll get map files and a copy of sass files so maps work properly.
-        "css": "DL/"
+        'css': 'DL/'
 
 Then download and build you static files with just:
 

@@ -7,7 +7,7 @@ import yaml
 from yaml.scanner import MarkedYAMLError
 
 from .build import Builder
-from .common import GrablibError, logger
+from .common import GrablibError, main_logger
 from .download import Downloader
 
 STD_FILE_NAMES = [re.compile('grablib\.ya?ml'), re.compile('grablib\.json')]
@@ -31,7 +31,7 @@ class Grab:
             try:
                 self.config_data = loader(f)
             except (MarkedYAMLError, ValueError) as e:
-                logger.error('%s: %s', e.__class__.__name__, e)
+                main_logger.error('%s: %s', e.__class__.__name__, e)
                 raise GrablibError('error loading "{}"'.format(config_file))
         if download_root:
             self.config_data['download_root'] = download_root
@@ -40,14 +40,14 @@ class Grab:
 
     def download(self):
         if 'download' not in self.config_data:
-            logger.warning('download called with no "download" info available')
+            main_logger.warning('download called with no "download" info available')
             return
         download = Downloader(**self.config_data)
         download()
 
     def build(self):
         if 'build' not in self.config_data:
-            logger.warning('build called with no "build" info available')
+            main_logger.warning('build called with no "build" info available')
             return
         build = Builder(**self.config_data)
         build()
@@ -55,10 +55,10 @@ class Grab:
     @classmethod
     def yaml_or_json(cls, file_path:  Path):
         if file_path.name.endswith(('.yml', '.yaml')):
-            logger.debug('Processing %s as a yaml file', file_path)
+            main_logger.debug('Processing %s as a yaml file', file_path)
             return cls.yaml_load
         elif file_path.name.endswith('.json'):
-            logger.debug('Processing %s as a json file', file_path)
+            main_logger.debug('Processing %s as a json file', file_path)
             return cls.json_load
         else:
             raise GrablibError('Unexpected extension for "{}", should be json or yml/yaml'.format(file_path.name))

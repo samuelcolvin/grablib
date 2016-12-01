@@ -1,41 +1,82 @@
 import logging
+import logging.config
+from typing import Union
 
 import click
 
-logger = logging.getLogger('grablib')
+main_logger = logging.getLogger('grablib.main')
+progress_logger = logging.getLogger('grablib.progress')
 
 
 class ClickHandler(logging.Handler):
-    colours = {
-        logging.DEBUG: 'white',
-        logging.INFO: 'green',
-        logging.WARN: 'yellow',
+    formats = {
+        logging.DEBUG: {'fg': 'white', 'dim': True},
+        logging.INFO: {'fg': 'green'},
+        logging.WARN: {'fg': 'yellow'},
     }
+
+    def get_log_format(self, record):
+        return self.formats.get(record.levelno, {'fg': 'red'})
 
     def emit(self, record):
         log_entry = self.format(record)
-        colour = self.colours.get(record.levelno, 'red')
-        click.secho(log_entry, fg=colour)
+        click.secho(log_entry, **self.get_log_format(record))
 
 
-def setlogging(verbosity='medium'):
-    for h in logger.handlers:
-        if isinstance(h, ClickHandler):
-            logger.removeHandler(h)
-    handler = ClickHandler()
-    formatter = logging.Formatter('%(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    if isinstance(verbosity, int):
+class ProgressHandler(ClickHandler):
+    formats = {
+        logging.DEBUG: {'fg': 'white', 'dim': True},
+        logging.INFO: {'fg': 'cyan'},
+        logging.WARN: {'fg': 'yellow'},
+    }
+
+
+def log_config(log_level: Union[str, int]) -> dict:
+    """
+    Setup default config. for dictConfig.
+    :param log_level: str name or django debugging int
+    :return: dict suitable for ``logging.config.dictConfig``
+    """
+    if isinstance(log_level, int):
         # to match django
-        level_name = {3: 'DEBUG', 2: 'INFO'}.get(verbosity, 'WARNING')
+        log_level = {3: 'DEBUG', 2: 'INFO'}.get(log_level, 'WARNING')
     else:
-        level_name = {'high': 'DEBUG', 'medium': 'INFO'}.get(verbosity, 'WARNING')
-    level = getattr(logging, level_name)
-    logger.setLevel(level)
+        log_level = log_level.upper()
+    return {
+        'version': 1,
+        'disable_existing_loggers': True,
+        'formatters': {
+            'default': {'format': '%(message)s'},
+            'indent': {'format': '    %(message)s'},
+        },
+        'handlers': {
+            'default': {
+                'level': log_level,
+                'class': 'grablib.common.ClickHandler',
+                'formatter': 'default'
+            },
+            'progress': {
+                'level': log_level,
+                'class': 'grablib.common.ProgressHandler',
+                'formatter': 'indent'
+            },
+        },
+        'loggers': {
+            main_logger.name: {
+                'handlers': ['default'],
+                'level': log_level,
+            },
+            progress_logger.name: {
+                'handlers': ['progress'],
+                'level': log_level,
+            },
+        },
+    }
 
 
-setlogging()
+def setup_logging(verbose):
+    config = log_config(verbose)
+    logging.config.dictConfig(config)
 
 
 class GrablibError(RuntimeError):

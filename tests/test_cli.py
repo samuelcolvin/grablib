@@ -1,6 +1,7 @@
 from click.testing import CliRunner
 
 from grablib.cli import cli
+from grablib.common import log_config
 
 from .conftest import gettree, mktree
 
@@ -40,3 +41,10 @@ def test_just_build(tmpworkdir):
     result = CliRunner().invoke(cli, ['build'])
     assert result.exit_code == 0
     assert gettree(tmpworkdir.join('built_at')) == {'libraries.js': '/* === foo.js === */\nvar v="foo js";\n'}
+
+
+def test_log_setup():
+    assert log_config(2)['handlers']['default']['level'] == 'INFO'
+    assert log_config('info')['handlers']['default']['level'] == 'INFO'
+    assert log_config(3)['handlers']['default']['level'] == 'DEBUG'
+    assert log_config('debug')['handlers']['default']['level'] == 'DEBUG'

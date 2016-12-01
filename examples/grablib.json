@@ -11,6 +11,7 @@
   "debug": true,
   "build_root": "static/prod",
   "build": {
+    "wipe": ".",
     "cat": {
       "libraries.js": [
         "DL/js/jquery.js",
