@@ -10,6 +10,7 @@ Kind of like bower, but in Python, and simpler, and with some more features.
 **grablib** can:
 
 * download files from urls, including extracting selectively from zip files.
+* create ``.grablib.lock`` which retains hashes of all downloaded files meaning assets can't change unexpectedly.
 * compile sass/scss/css using `libsass`_.
 * concatenate and minify javascript using `jsmin`_.
 
@@ -39,14 +40,15 @@ Define your static files thus: (``grablib.yml``)
     build:
       cat:
         # concatenate jquery and codemirror into "libraries.js"
-        # it won't et minified as debug is true, but without that it would
+        # it won't get minified as debug is true, but without that it would
         "libraries.js":
           - "DL/js/jquery.js"
           - "DL/codemirror/codemirror.js"
       sass:
-        # compile all css, scss and sass files which don't start with _ into the
-        # css directory, here that will just be build_bootstrap.scss which will
-        # in this case contain the whole of bootstrap.
+        # compile all css, scss and sass files which don't start with _ from the "download_root"
+        # into the "css" directory, here that will just be build_bootstrap.scss which will
+        # build the whole of bootstrap.
+        # debug: true means you'll get map files and a copy of sass files so maps work properly.
         "css": "DL/"
 
 Then download and build you static files with just:
