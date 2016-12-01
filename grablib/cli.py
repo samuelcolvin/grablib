@@ -17,9 +17,11 @@ click.disable_unicode_literals_warning = True
 @click.option('-v', '--verbosity', type=click.Choice(['high', 'medium', 'low']), default='medium')
 def cli(action, config_file, debug, verbosity):
     """
-    Utility for defining then downloading and building external static files eg. Javascript, CSS.
+    Static asset management in python.
 
     Called with no arguments grablib will download, then build. You can also choose to only download or build.
+
+    See `grablib -h` and https://github.com/samuelcolvin/grablib for more help.
     """
     setlogging(verbosity)
     try:

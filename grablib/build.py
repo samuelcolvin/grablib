@@ -23,14 +23,13 @@ class Builder:
 
     def __call__(self):
         wipe_data = self.build.get('wipe', None)
-        if wipe_data:
-            self.wipe(wipe_data)
+        wipe_data and self.wipe(wipe_data)
+
         cat_data = self.build.get('cat', None)
-        if cat_data:
-            self.cat(cat_data)
+        cat_data and self.cat(cat_data)
+
         sass_data = self.build.get('sass', None)
-        if sass_data:
-            self.sass(sass_data)
+        sass_data and self.sass(sass_data)
 
     def cat(self, data):
         for dest, srcs in data.items():
