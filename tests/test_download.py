@@ -60,6 +60,36 @@ def test_zip(mocker, tmpworkdir):
     assert gettree(tmpworkdir.join('test-download-dir')) == {'subdirectory': {'b.txt': 'b\n', 'a.txt': 'a\n'}}
 
 
+def test_zip_null(mocker, tmpworkdir):
+    mock_requests_get = mocker.patch('grablib.download.requests.Session.get')
+    mock_requests_get.side_effect = request_fixture
+    mktree(tmpworkdir, {
+        'grablib.yaml': """
+      "download":
+        "https://any-old-url.com/test_assets.zip":
+           "test_assets/assets/a.txt": null
+           "test_assets/assets/(.+)": "subdirectory/{filename}"
+    """})
+    Grab(download_root='test-download-dir').download()
+    assert gettree(tmpworkdir.join('test-download-dir')) == {'subdirectory': {'b.txt': 'b\n'}}
+
+
+def test_zip_double(mocker, tmpworkdir):
+    mock_requests_get = mocker.patch('grablib.download.requests.Session.get')
+    mock_requests_get.side_effect = request_fixture
+    mktree(tmpworkdir, {
+        'grablib.yaml': """
+      'download':
+        'https://any-old-url.com/test_assets.zip':
+           'test_assets/assets/a.txt':
+             - a.txt
+             - a_again.txt
+           'test_assets/assets/(.+)': '{filename}'
+    """})
+    Grab(download_root='test-download-dir').download()
+    assert gettree(tmpworkdir.join('test-download-dir')) == {'b.txt': 'b\n', 'a.txt': 'a\n', 'a_again.txt': 'a\n'}
+
+
 def test_zip_error(mocker, tmpworkdir):
     mock_requests_get = mocker.patch('grablib.download.requests.Session.get')
     mock_requests_get.side_effect = request_fixture
@@ -132,7 +162,7 @@ def test_download_error(mocker, tmpworkdir):
     assert excinfo.value.args == ('Error downloading "https://www.whatever.com/foo.js" to "js/"',)
 
 
-def test_no_standard_file(tmpworkdir):
+def test_no_standard_file():
     with pytest.raises(GrablibError) as excinfo:
         Grab(download_root='test-download-dir')
     assert excinfo.value.args[0].startswith('Unable to find config file with standard name "grablib.yml" or')

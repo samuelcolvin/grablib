@@ -77,25 +77,25 @@ class Downloader:
                 if filepath.endswith('/'):
                     continue
                 target_found = False
-                logger.debug('  searching for target for %s...', filepath)
+                logger.debug('searching for target for %s...', filepath)
                 for regex_pattern, targets in value.items():
                     if not re.match(regex_pattern, filepath):
                         continue
                     target_found = True
                     if targets is None:
-                        logger.debug('    target null, skipping')
+                        logger.debug('target null, skipping')
                         break
                     if isinstance(targets, str):
                         targets = [targets]
                     for target in targets:
                         new_path = self._file_path(filepath, target, regex=regex_pattern)
-                        logger.debug('    %s > %s based on regex %s',
+                        logger.debug('%s > %s based on regex %s',
                                      filepath, new_path.relative_to(self.download_root), regex_pattern)
                         self._write(new_path, zipf.read(filepath))
                         zcopied += 1
                     break
                 if not target_found:
-                    logger.debug('    no target found')
+                    logger.debug('no target found')
         logger.info('%d files copied from zip archive', zcopied)
         self.downloaded += 1
 
@@ -106,10 +106,11 @@ class Downloader:
         m = re.search(regex, src_path)
         if dest.endswith('/') or dest == '':
             dest += '{filename}'
-        if m:
-            names = m.groupdict() or {'filename': m.groups()[-1]}
-            for name, value in names.items():
-                dest = dest.replace('{%s}' % name, value)
+        names = m.groupdict()
+        if not names and m.groups():
+            names = {'filename': m.groups()[-1]}
+        for name, value in names.items():
+            dest = dest.replace('{%s}' % name, value)
         # remove starting slash so path can't be absolute
         dest = dest.strip(' /')
         if not dest:
