@@ -12,30 +12,6 @@ def test_cat(tmpworkdir):
         build_root: "built_at"
         build:
           cat:
-            "libraries.js":
-              - "./foo.js"
-              - "./bar.js"
-        """,
-        'foo.js': 'var v = "foo js";\n    vindent = true;',
-        'bar.js': 'var v = "bar js";',
-    })
-    Grab().build()
-    assert gettree(tmpworkdir.join('built_at')) == {
-        'libraries.js':
-            '/* === foo.js === */\n'
-            'var v = "foo js";\n'
-            '    vindent = true;\n'
-            '/* === bar.js === */\n'
-            'var v = "bar js";\n'
-    }
-
-
-def test_cat_minify(tmpworkdir):
-    mktree(tmpworkdir, {
-        'grablib.yml': """
-        build_root: "built_at"
-        build:
-          cat:
             "libs.min.js":
               - "./foo.js"
               - "./bar.js"
@@ -51,6 +27,31 @@ def test_cat_minify(tmpworkdir):
             '/* === bar.js === */\n'
             'var v="bar js";\n'
     }
+
+
+def test_cat_debug(tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': """
+        build_root: "built_at"
+        build:
+          debug: true
+          cat:
+            "libraries.js":
+              - "./foo.js"
+              - "./bar.js"
+        """,
+        'foo.js': 'var v = "foo js";\n    vindent = true;',
+        'bar.js': 'var v = "bar js";',
+    })
+    Grab().build()
+    assert {
+        'libraries.js':
+            '/* === foo.js === */\n'
+            'var v = "foo js";\n'
+            '    vindent = true;\n'
+            '/* === bar.js === */\n'
+            'var v = "bar js";\n'
+    } == gettree(tmpworkdir.join('built_at'))
 
 
 def test_cat_src_wrong(tmpworkdir):
@@ -139,6 +140,30 @@ def test_sass(tmpworkdir):
             'foo.css': 'a{color:red}.foo .bar{color:black;width:10px}\n'
         }
     }
+
+
+def test_sass_debug(tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': """
+        build_root: "built_at"
+        build:
+          debug: true
+          sass:
+            "css": "sass_dir"
+        """,
+        'sass_dir': {
+            'foo.scss': '.foo { .bar {color: black;}}'
+        }
+    })
+    Grab().build()
+    assert {
+        'foo.css': '.foo .bar {\n  color: black; }\n\n/*# sourceMappingURL=foo.map */',
+        '.src': {
+            'foo.scss': '.foo { .bar {color: black;}}'
+        },
+        'foo.map': '{\n\t"version": 3,\n\t"file": ".src/foo.css",\n\t'
+                   '"sources": [\n\t\t".src/foo.scss"\n\t],\n\t"mappings": "AAAA,AAAO,IAAH,CAAG,IAAI,...'
+    } == gettree(tmpworkdir.join('built_at/css'))
 
 
 def test_sass_error(tmpworkdir):

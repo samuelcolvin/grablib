@@ -19,6 +19,7 @@ class Builder:
         self.build = build
         self.download_root = download_root and Path(download_root).resolve()
         self.files_built = 0
+        self.debug = build.get('debug', False)
 
     def __call__(self):
         cat_data = self.build.get('cat', None)
@@ -32,14 +33,13 @@ class Builder:
         for dest, srcs in data.items():
             if not isinstance(srcs, list):
                 raise GrablibError('concatenating: source files should be a list')
-            minify = dest.endswith('.min.js')
 
             final_content, files_combined = '', 0
             for src in srcs:
                 if isinstance(src, str):
                     src = {'src': src}
                 path = self._file_path(src['src'])
-                content = self._read_file(path, minify)
+                content = self._read_file(path)
                 files_combined += 1
                 for pattern, rep in src.get('replace', {}).items():
                     content = re.sub(pattern, rep, content)
@@ -58,7 +58,7 @@ class Builder:
             src_path = self._file_path(src)
             dest_path = self.build_root.joinpath(dest)
             dest_path.relative_to(self.build_root)
-            sass_gen = SassGenerator(src_path, dest_path)
+            sass_gen = SassGenerator(src_path, dest_path, self.debug)
             sass_gen()
 
     starts_download = re.compile('^(?:DOWNLOAD|DL)/')
@@ -71,10 +71,9 @@ class Builder:
         else:
             return Path(src_path).resolve()
 
-    @staticmethod
-    def _read_file(file_path: Path, minify):
+    def _read_file(self, file_path: Path):
         content = file_path.read_text()
-        if minify and file_path.name.endswith('.js') and not file_path.name.endswith('.min.js'):
+        if not self.debug and file_path.name.endswith('.js') and not file_path.name.endswith('.min.js'):
             return jsmin(content)
         return content
 

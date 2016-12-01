@@ -40,4 +40,4 @@ def test_just_build(tmpworkdir):
     assert tmpworkdir.join('built_at').check() is False
     result = CliRunner().invoke(cli, ['build'])
     assert result.exit_code == 0
-    assert gettree(tmpworkdir.join('built_at')) == {'libraries.js': '/* === foo.js === */\nvar v = "foo js";\n'}
+    assert gettree(tmpworkdir.join('built_at')) == {'libraries.js': '/* === foo.js === */\nvar v="foo js";\n'}

@@ -11,6 +11,7 @@ download:
 
 build_root: "static/prod"
 build:
+  debug: true
   cat:
     "libraries.js":
       - "DL/js/jquery.js"
