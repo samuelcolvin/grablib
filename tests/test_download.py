@@ -39,7 +39,7 @@ def test_simple(mocker, tmpworkdir):
     assert gettree(tmpworkdir) == {
         'grablib.yml': "download:\n  'http://wherever.com/file.js': x",
         'test-download-dir': {'x': 'response text'},
-        'grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x'
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x'
     }
 
 
@@ -194,18 +194,18 @@ def test_no_lock(mocker, tmpworkdir):
 
 def test_simple_lock(mocker, tmpworkdir):
     mktree(tmpworkdir, {
-        'grablib.yml': "download:\n  'http://wherever.com/file.js': x"
+        'grablib.yml': "lock: the.lock\ndownload:\n  'http://wherever.com/file.js': x"
     })
     mock_requests_get = mocker.patch('grablib.download.requests.Session.get')
     mock_requests_get.return_value = MockResponse()
-    Grab(download_root='test-download-dir').download()
+    Grab(download_root='static').download()
     assert mock_requests_get.call_count == 1
     assert gettree(tmpworkdir) == {
-        'grablib.yml': "download:\n  'http://wherever.com/file.js': x",
-        'test-download-dir': {'x': 'response text'},
-        'grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x'
+        'grablib.yml': "lock: the.lock\ndownload:\n  'http://wherever.com/file.js': x",
+        'static': {'x': 'response text'},
+        'the.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x'
     }
-    Grab(download_root='test-download-dir').download()
+    Grab(download_root='static').download()
     assert mock_requests_get.call_count == 1
 
 
@@ -223,7 +223,7 @@ def test_lock_one_change(mocker, tmpworkdir):
     assert gettree(tmpworkdir, max_len=None) == {
         'grablib.yml': yml,
         'droot': {'file.js': 'response text', 'file2.js': 'response text'},
-        'grablib.lock': """\
+        '.grablib.lock': """\
 b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js file.js
 b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file2.js file2.js"""
     }
@@ -233,7 +233,7 @@ b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file2.js file2.js"""
     assert gettree(tmpworkdir, max_len=None) == {
         'grablib.yml': yml,
         'droot': {'file.js': 'response text', 'file2.js': 'response text'},
-        'grablib.lock': """\
+        '.grablib.lock': """\
 b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js file.js
 b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file2.js file2.js"""
     }
@@ -250,7 +250,7 @@ def test_lock_local_file_changes(mocker, tmpworkdir):
     assert gettree(tmpworkdir) == {
         'grablib.yml': "download:\n  'http://wherever.com/file.js': x",
         'test-download-dir': {'x': 'response text'},
-        'grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x'
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x'
     }
     mktree(tmpworkdir, {
         'grablib.yml': "download:\n  'http://wherever.com/file.js': x2"
@@ -260,7 +260,7 @@ def test_lock_local_file_changes(mocker, tmpworkdir):
     assert gettree(tmpworkdir) == {
         'grablib.yml': "download:\n  'http://wherever.com/file.js': x2",
         'test-download-dir': {'x': 'response text', 'x2': 'response text'},
-        'grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x2'
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x2'
     }
 
 
@@ -278,7 +278,7 @@ def test_lock_remote_file_changes(mocker, tmpworkdir):
     assert gettree(tmpworkdir) == {
         'grablib.yml': "download:\n  'http://wherever.com/file.js': x",
         's': {'x': 'response text'},
-        'grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x'
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x'
     }
     tmpworkdir.join('s/x').remove()
     with pytest.raises(GrablibError):
@@ -293,7 +293,7 @@ download:
 zip_downloaded_directory = {
     'grablib.yml': zip_dowload_yml,
     'droot': {'subdirectory': {'b.txt': 'b\n', 'a.txt': 'a\n'}},
-    'grablib.lock': """\
+    '.grablib.lock': """\
 b56e6adc64a2a57319285ae64e64d2ec https://any-old-url.com/test_assets.zip :zip-lookup
 0d815adb49aeaa79990afa6387b36014 https://any-old-url.com/test_assets.zip :zip-raw
 60b725f10c9c85c70d97880dfe8191b3 https://any-old-url.com/test_assets.zip subdirectory/a.txt

@@ -28,7 +28,7 @@ class Downloader:
                  download_root: str,
                  download: dict,
                  aliases: dict=None,
-                 lock: str='grablib.lock',
+                 lock: str='.grablib.lock',
                  **data):
         """
         :param download_root: path to download file to
@@ -72,8 +72,7 @@ class Downloader:
         new_path = self._file_path(url, dst, regex=r'/(?P<filename>[^/]+)$')
         lock_hash, unchanged = self._file_exists_unchanged(url, new_path)
         if unchanged:
-            name, lock_hash = self._current_lock.get(url)
-            self._add_to_lock(url, name, lock_hash)
+            self._add_to_lock(url, *self._current_lock[url])
             self._skipped += 1
             logger.debug('%s already exists unchanged, not downloading', url)
             return
@@ -89,7 +88,7 @@ class Downloader:
 
     def _file_exists_unchanged(self, url, path: Path):
         name_hash = self._current_lock.get(url)
-        if not name_hash:
+        if name_hash is None:
             return None, False
         name, lock_hash = name_hash
         if name != str(path.relative_to(self.download_root)):
@@ -101,8 +100,7 @@ class Downloader:
         value_hash = self._data_hash(json.dumps(value, sort_keys=True).encode())
         lock_hash, unchanged = self._zip_exists_unchanged(url, value_hash)
         if unchanged:
-            for name, lock_hash in self._current_lock.get(url):
-                self._add_to_lock(url, name, lock_hash)
+            [self._add_to_lock(url, name, lock_hash) for name, lock_hash in self._current_lock[url]]
             self._skipped += 1
             logger.debug('%s already exists unchanged, not downloading', url)
             return
@@ -122,7 +120,7 @@ class Downloader:
         zipinmemory = IO(content)
         zcopied = 0
         with zipfile.ZipFile(zipinmemory) as zipf:
-            logger.debug('%d file in zip archive', len(zipf.namelist()))
+            logger.debug('%d files in zip archive', len(zipf.namelist()))
 
             for filepath in zipf.namelist():
                 if filepath.endswith('/'):
@@ -152,9 +150,9 @@ class Downloader:
     def _zip_exists_unchanged(self, url, value_hash):
         name_hashes = self._current_lock.get(url)
         zip_hash = None
-        if not name_hashes:
+        if name_hashes is None:
             return zip_hash, False
-        found_error = False
+        found_change = False
         for name, lock_hash in name_hashes:
             if name == ZIP_RAW_REF:
                 zip_hash = lock_hash
@@ -164,8 +162,8 @@ class Downloader:
             else:
                 file_hash = self._path_hash(self.download_root.joinpath(name))
             if file_hash != lock_hash:
-                found_error = True
-        return zip_hash, not found_error and zip_hash is not None
+                found_change = True
+        return zip_hash, not found_change and zip_hash is not None
 
     def _file_path(self, src_path, dest, regex):
         """
@@ -231,7 +229,7 @@ class Downloader:
         if self._lock_file and self._lock_file.exists():
             with self._lock_file.open() as f:
                 for line in f:
-                    _hash, url, name = line.rstrip('\n').split(' ')
+                    _hash, url, name = line.strip('\n').split(' ')
                     v = name, _hash
                     existing_v = self._current_lock.get(url)
                     if existing_v is None:
