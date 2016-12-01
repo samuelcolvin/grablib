@@ -6,7 +6,7 @@ from grablib.common import GrablibError
 from .conftest import gettree, mktree
 
 
-def test_simple(tmpworkdir):
+def test_cat(tmpworkdir):
     mktree(tmpworkdir, {
         'grablib.yml': """
         build_root: "built_at"
@@ -30,7 +30,7 @@ def test_simple(tmpworkdir):
     }
 
 
-def test_minify(tmpworkdir):
+def test_cat_minify(tmpworkdir):
     mktree(tmpworkdir, {
         'grablib.yml': """
         build_root: "built_at"
@@ -53,7 +53,7 @@ def test_minify(tmpworkdir):
     }
 
 
-def test_src_wrong(tmpworkdir):
+def test_cat_src_wrong(tmpworkdir):
     mktree(tmpworkdir, {
         'grablib.yml': """
         build_root: "built_at"
@@ -66,7 +66,7 @@ def test_src_wrong(tmpworkdir):
         Grab().build()
 
 
-def test_download_root(tmpworkdir):
+def test_cat_download_root(tmpworkdir):
     mktree(tmpworkdir, {
         'grablib.yml': """
         download_root: downloaded2
@@ -90,7 +90,7 @@ def test_download_root(tmpworkdir):
     }
 
 
-def test_regex(tmpworkdir):
+def test_cat_regex(tmpworkdir):
     mktree(tmpworkdir, {
         'grablib.yml': """
         build_root: "built_at"
@@ -109,3 +109,49 @@ def test_regex(tmpworkdir):
             '/* === foo.js === */\n'
             'var v="!new_value js";\n'
     }
+
+
+def test_sass(tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': """
+        build_root: "built_at"
+        build:
+          sass:
+            "css": "sass_dir"
+        """,
+        'sass_dir': {
+            'not_css.txt': 'not included',
+            'adir/_mixin.scss': 'a { color: red};',
+            'foo.scss': """
+            @import 'adir/mixin';
+            .foo {
+              .bar {
+                color: black;
+                width: (60px / 6);
+              }
+            }
+            """
+        }
+    })
+    Grab().build()
+    assert gettree(tmpworkdir.join('built_at')) == {
+        'css': {
+            'foo.css': 'a{color:red}.foo .bar{color:black;width:10px}\n'
+        }
+    }
+
+
+def test_sass_error(tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': """
+        build_root: "built_at"
+        build:
+          sass:
+            "css": "sass_dir"
+        """,
+        'sass_dir': {
+            'foo.scss': '.foo { WRONG'
+        }
+    })
+    with pytest.raises(GrablibError):
+        Grab().build()
