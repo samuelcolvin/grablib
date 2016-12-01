@@ -8,6 +8,7 @@ from yaml.scanner import MarkedYAMLError
 
 from .common import GrablibError, logger
 from .download import Downloader
+from .build import Builder
 # from . import download, minify
 
 
@@ -60,12 +61,12 @@ def grab(*, config_file: str=None, download_root: str=None):
     if download_root:
         config_data['download_root'] = download_root
 
-    download = Downloader(**config_data)
-    download()
-    # if libs_info:
-    #     download.DownloadLibs(libs_info, **options).download()
-    # if minify_info:
-    #     minify.MinifyLibs(minify_info, **options).minify()
+    if 'download' in config_data:
+        download = Downloader(**config_data)
+        download()
+    if 'build' in config_data:
+        build = Builder(**config_data)
+        build()
 
 
 def yaml_load(f):

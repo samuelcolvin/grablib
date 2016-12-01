@@ -2,6 +2,7 @@ import re
 import zipfile
 from io import BytesIO as IO
 from pathlib import Path
+from typing import Dict, Union
 
 import requests
 from requests.exceptions import RequestException
@@ -19,13 +20,18 @@ class Downloader:
     main class for downloading library files based on json file.
     """
 
-    def __init__(self, *, download_root, downloads, aliases=None, **data):
+    def __init__(self, *,
+                 download_root: str,
+                 download: Dict[str, Union[str, Dict]],
+                 aliases: Dict[str, str]=None,
+                 **data):
         """
-        :param libs_info: dict, either url: destination or zip url: dict of regex: destination, see docs
-        :param sites: dict of names of sites to simplify similar urls, see examples.
+        :param download_root: path to download file to
+        :param downloads: dict of urls and paths to download from from > to
+        :param aliases: extra aliases for download addresses
         """
         self.download_root = Path(download_root).absolute()
-        self.downloads = downloads
+        self.download = download
         self.aliases = ALIASES.copy()
         if aliases:
             self.aliases.update(aliases)
@@ -37,7 +43,7 @@ class Downloader:
         """
         logger.info('Downloading files to: %s', self.download_root)
 
-        for url_base, value in self.downloads.items():
+        for url_base, value in self.download.items():
             url = self._setup_url(url_base)
             try:
                 if isinstance(value, dict):
@@ -95,7 +101,7 @@ class Downloader:
         check src_path complies with regex and generate new filename
         """
         m = re.search(regex, src_path)
-        if dest.endswith('/'):
+        if dest.endswith('/') or dest == '':
             dest += '{filename}'
         if m:
             names = m.groupdict() or {'filename': m.groups()[-1]}
@@ -104,7 +110,7 @@ class Downloader:
         # remove starting slash so path can't be absolute
         dest = dest.lstrip(' /')
         if not dest:
-            raise GrablibError('destination path may not resolve to be null')
+            raise GrablibError('destination path must not resolve to be null')
         new_path = self.download_root.joinpath(dest)
         new_path.relative_to(self.download_root)
         return new_path

@@ -2,6 +2,7 @@ import logging
 import os
 
 import click
+from pathlib import Path
 
 logger = logging.getLogger('grablib')
 
@@ -47,55 +48,8 @@ def setlogging(verbosity='medium'):
 setlogging()
 
 
-class GrablibError(Exception):
+class GrablibError(RuntimeError):
     """
     Exception used when the error is clear so no traceback is required.
     """
     pass
-
-
-class ProcessBase(object):
-    """
-    main class for downloading library files based on json file.
-    """
-
-    def __init__(self, download_root, minified_root=None, overwrite=False, file_permissions=None, sites=None):
-        """
-        initialize DownloadLibs.
-        :param download_root: string, root folder to put files in
-        :param minified_root: string, root folder for minified and concatenated files
-        :param overwrite: bool, whether or not to overwrite files that already exist, default is False
-        :param file_permissions: int or None, if not None permissions to give downloaded files eg. 0666
-        :param sites: not used, included here to simplify argument layout in MinifyLibs
-        """
-        self.download_root = download_root
-        self.minified_root = minified_root
-        self.overwrite = overwrite
-        if overwrite != DEFAULT_OPTIONS['overwrite']:
-            logger.info('Overwrite set to %r' % overwrite)
-        self.file_perm = file_permissions
-
-    def _write(self, dest, content):
-        try:
-            content = content.encode()
-        except (UnicodeDecodeError, AttributeError):
-            pass
-        with open(dest, 'wb') as f:
-            f.write(content)
-        if self.file_perm:
-            os.chmod(dest, self.file_perm)
-
-
-def prepare_path(root, cls, *path_args):
-    """
-    Create path from args if the directory does not exist create it.
-    :param path_args: chunks of path
-    :return: tuple: (if the path already existed, the new path)
-    """
-    dest = os.path.join(*path_args)
-    if os.path.exists(dest):
-        return True, dest
-    dest_dir = os.path.dirname(dest)
-    if not os.path.exists(dest_dir):
-        os.makedirs(dest_dir)
-    return False, dest
