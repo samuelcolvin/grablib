@@ -49,6 +49,7 @@ setup(
         'click>=6.6',
         'csscompressor==0.9.3',
         'jsmin==2.2.1',
+        'libsass>=0.11.2',
         'PyYAML>=3.12',
         'requests>=2.12.0',
     ],

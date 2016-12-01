@@ -22,6 +22,3 @@ test:
 .PHONY: testcov
 testcov:
 	py.test --cov=grablib && (echo "building coverage html"; coverage html)
-
-.PHONY: all
-all: testcov lint

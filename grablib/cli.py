@@ -3,7 +3,7 @@ import sys
 import click
 
 from .common import GrablibError, setlogging
-from .grab import grab
+from .grab import Grab
 from .version import VERSION
 
 click.disable_unicode_literals_warning = True
@@ -11,25 +11,23 @@ click.disable_unicode_literals_warning = True
 
 @click.command()
 @click.version_option(VERSION, '-V', '--version')
-@click.argument('action', type=click.Choice(['download', 'build']), default='download', required=False,
-                metavar='[download (default) / build]')
-@click.argument('config-file', type=click.Path(exists=True, dir_okay=False), default='grablib.json', required=False)
-@click.option('--overwrite/--no-overwrite', default=False,
-              help='Overwrite existing files, default is not to download a library if the file already exists')
-@click.option('-d', '--download-root', type=click.Path(exists=False, file_okay=False),
-              help='Root directory to put downloaded files in, defaults to "./static/".')
+@click.argument('action', type=click.Choice(['download', 'build']), required=False, metavar='[download / build]')
+@click.option('-f', '--config-file', type=click.Path(exists=True, dir_okay=False, file_okay=True), required=False)
+@click.option('--no-debug/--debug', 'debug', default=None)
 @click.option('-v', '--verbosity', type=click.Choice(['high', 'medium', 'low']), default='medium')
-def cli(action, config_file, overwrite, download_root, verbosity):
+def cli(action, config_file, debug, verbosity):
     """
-    Utility for defining then downloading and preprocessing external static files
-    eg. Javascript, CSS.
+    Utility for defining then downloading and building external static files eg. Javascript, CSS.
+
+    Called with no arguments grablib will download, then build. You can also choose to only download or build.
     """
     setlogging(verbosity)
     try:
-        # other actions are not yet implemented
-        grab(config_file, overwrite=overwrite, download_root=download_root)
+        grab = Grab(config_file, debug=debug)
+        if action in {'download', None}:
+            grab.download()
+        if action in {'build', None}:
+            grab.build()
     except GrablibError as e:
-        if verbosity != 'high':
-            click.secho('use "--verbosity high" for more details', fg='red')
         click.secho('Error: %s' % e, fg='red')
         sys.exit(2)
