@@ -1,7 +1,7 @@
 import pytest
 
 from grablib import Grab
-from grablib.common import GrablibError
+from grablib.common import GrablibError, setup_logging
 
 from .conftest import gettree, mktree
 
@@ -201,7 +201,7 @@ def test_rm_all(tmpworkdir):
         'grablib.yml': """
         build_root: "built_at"
         build:
-          wipe: '.'
+          wipe: '**/*'
         """,
         'built_at': {
             'foo/bar.js': 'x',
@@ -232,6 +232,7 @@ def test_rm_some(tmpworkdir):
             'remain.txt': 'y',
         }
     })
+    setup_logging('DEBUG')
     Grab().build()
     assert {
         'foo': {

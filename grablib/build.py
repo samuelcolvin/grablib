@@ -69,25 +69,24 @@ class Builder:
             sass_gen = SassGenerator(src_path, dest_path, self.debug)
             sass_gen()
 
-    def wipe(self, paths):
-        if isinstance(paths, str):
-            paths = [paths]
+    def wipe(self, globs):
+        if isinstance(globs, str):
+            globs = [globs]
         count = 0
-        for p in paths:
-            path = self._dest_path(p)
-            if not path.exists():
-                continue
-            if path == self.build_root:
-                # in this case we don't delete the directory itself, just some files
-                paths.extend(list(path.iterdir()))
-                continue
-            if path.is_dir():
-                shutil.rmtree(str(path))
-                count += 1
-            else:
-                assert path.is_file()
-                path.unlink()
-                count += 1
+        for g in globs:
+            paths = list(self.build_root.glob(g))
+
+            progress_logger.info('deleting %d paths based on "%s"', len(paths), g)
+            for path in paths:
+                if path.is_dir():
+                    progress_logger.info('deleting directory "%s"', path)
+                    shutil.rmtree(str(path))
+                    count += 1
+                elif path.exists():
+                    assert path.is_file()
+                    progress_logger.info('deleting file "%s"', path)
+                    path.unlink()
+                    count += 1
         main_logger.info('%d paths deleted', count)
 
     def _dest_path(self, p):

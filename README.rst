@@ -40,7 +40,7 @@ Define your static files thus: (``grablib.yml``)
     build:
       # delete the entire static/prod directory before building, this is required for sass,
       # and generally safer
-      wipe: '.'
+      wipe: '**/*'
       cat:
         # concatenate jquery and codemirror into "libraries.js"
         # it won't get minified as debug is true, but without that it would
