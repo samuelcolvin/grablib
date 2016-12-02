@@ -39,7 +39,7 @@ def test_simple(mocker, tmpworkdir):
     assert gettree(tmpworkdir) == {
         'grablib.yml': "download:\n  'http://wherever.com/file.js': x",
         'test-download-dir': {'x': 'response text'},
-        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x'
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x\n'
     }
 
 
@@ -203,7 +203,7 @@ def test_simple_lock(mocker, tmpworkdir):
     assert gettree(tmpworkdir) == {
         'grablib.yml': "lock: the.lock\ndownload:\n  'http://wherever.com/file.js': x",
         'static': {'x': 'response text'},
-        'the.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x'
+        'the.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x\n'
     }
     Grab(download_root='static').download()
     assert mock_requests_get.call_count == 1
@@ -225,7 +225,7 @@ def test_lock_one_change(mocker, tmpworkdir):
         'droot': {'file.js': 'response text', 'file2.js': 'response text'},
         '.grablib.lock': """\
 b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js file.js
-b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file2.js file2.js"""
+b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file2.js file2.js\n"""
     }
     tmpworkdir.join('droot/file.js').remove()
     Grab().download()
@@ -235,7 +235,7 @@ b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file2.js file2.js"""
         'droot': {'file.js': 'response text', 'file2.js': 'response text'},
         '.grablib.lock': """\
 b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js file.js
-b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file2.js file2.js"""
+b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file2.js file2.js\n"""
     }
 
 
@@ -250,7 +250,7 @@ def test_lock_local_file_changes(mocker, tmpworkdir):
     assert gettree(tmpworkdir) == {
         'grablib.yml': "download:\n  'http://wherever.com/file.js': x",
         'test-download-dir': {'x': 'response text'},
-        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x'
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x\n'
     }
     mktree(tmpworkdir, {
         'grablib.yml': "download:\n  'http://wherever.com/file.js': x2"
@@ -260,7 +260,7 @@ def test_lock_local_file_changes(mocker, tmpworkdir):
     assert gettree(tmpworkdir) == {
         'grablib.yml': "download:\n  'http://wherever.com/file.js': x2",
         'test-download-dir': {'x': 'response text', 'x2': 'response text'},
-        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x2'
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x2\n'
     }
 
 
@@ -278,7 +278,7 @@ def test_lock_remote_file_changes(mocker, tmpworkdir):
     assert gettree(tmpworkdir) == {
         'grablib.yml': "download:\n  'http://wherever.com/file.js': x",
         's': {'x': 'response text'},
-        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x'
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x\n'
     }
     tmpworkdir.join('s/x').remove()
     with pytest.raises(GrablibError):
@@ -297,7 +297,7 @@ zip_downloaded_directory = {
 b56e6adc64a2a57319285ae64e64d2ec https://any-old-url.com/test_assets.zip :zip-lookup
 0d815adb49aeaa79990afa6387b36014 https://any-old-url.com/test_assets.zip :zip-raw
 60b725f10c9c85c70d97880dfe8191b3 https://any-old-url.com/test_assets.zip subdirectory/a.txt
-3b5d5c3712955042212316173ccf37be https://any-old-url.com/test_assets.zip subdirectory/b.txt"""
+3b5d5c3712955042212316173ccf37be https://any-old-url.com/test_assets.zip subdirectory/b.txt\n"""
 }
 
 

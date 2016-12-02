@@ -243,4 +243,4 @@ class Downloader:
         if self._lock_file is None:
             return
         self._new_lock.sort(key=lambda v: (v['url'], v['name']))
-        self._lock_file.write_text('\n'.join('{hash} {url} {name}'.format(**v) for v in self._new_lock))
+        self._lock_file.write_text('\n'.join('{hash} {url} {name}'.format(**v) for v in self._new_lock) + '\n')
