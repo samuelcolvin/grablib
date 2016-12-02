@@ -126,26 +126,25 @@ class Downloader:
             for filepath in zipf.namelist():
                 if filepath.endswith('/'):
                     continue
-                target_found = False
-                for regex_pattern, targets in value.items():
-                    if not re.match(regex_pattern, filepath):
-                        continue
-                    target_found = True
-                    if targets is None:
-                        progress_logger.debug('target null, skipping')
+                regex_pattern, targets = None, None
+                for r, t in value.items():
+                    if re.match(r, filepath):
+                        regex_pattern, targets = r, t
                         break
+                if regex_pattern is None:
+                    progress_logger.debug('"%s" no target found', filepath)
+                elif targets is None:
+                    progress_logger.debug('"%s" skipping (regex: "%s")', filepath, regex_pattern)
+                else:
                     if isinstance(targets, str):
                         targets = [targets]
                     for target in targets:
                         new_path = self._file_path(filepath, target, regex=regex_pattern)
-                        progress_logger.debug('"%s": "%s" > "%s"',
-                                              regex_pattern, filepath, new_path.relative_to(self.download_root))
+                        progress_logger.debug('"%s" > "%s" (regex: "%s")',
+                                              filepath, new_path.relative_to(self.download_root), regex_pattern)
                         self._write(new_path, zipf.read(filepath), url)
                         zcopied += 1
-                    break
-                if not target_found:
-                    progress_logger.debug('no target found for "%s"', filepath)
-            return zcopied
+        return zcopied
 
     def _zip_exists_unchanged(self, url, value_hash):
         name_hashes = self._current_lock.get(url)
