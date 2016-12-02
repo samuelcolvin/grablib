@@ -40,8 +40,7 @@ def log_config(log_level: Union[str, int]) -> dict:
     if isinstance(log_level, int):
         # to match django
         log_level = {3: 'DEBUG', 2: 'INFO'}.get(log_level, 'WARNING')
-    else:
-        log_level = log_level.upper()
+    assert log_level in {'DEBUG', 'INFO', 'WARNING', 'ERROR'}, 'wrong log level %s' % log_level
     return {
         'version': 1,
         'disable_existing_loggers': True,
@@ -74,8 +73,8 @@ def log_config(log_level: Union[str, int]) -> dict:
     }
 
 
-def setup_logging(verbose):
-    config = log_config(verbose)
+def setup_logging(log_level):
+    config = log_config(log_level)
     logging.config.dictConfig(config)
 
 

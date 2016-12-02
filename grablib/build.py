@@ -36,7 +36,7 @@ class Builder:
         total_files_combined = 0
         for dest, srcs in data.items():
             if not isinstance(srcs, list):
-                raise GrablibError('concatenating: source files should be a list')
+                raise GrablibError('source files for concatenation should be a list')
 
             final_content, files_combined = '', 0
             for src in srcs:
@@ -48,6 +48,7 @@ class Builder:
                 for pattern, rep in src.get('replace', {}).items():
                     content = re.sub(pattern, rep, content)
                 final_content += '/* === {} === */\n{}\n'.format(path.name, content.strip('\n'))
+                progress_logger.debug('  appending %s', path.name)
 
             if files_combined == 0:
                 main_logger.warning('no files found to form "%s"', dest)

@@ -43,8 +43,32 @@ def test_just_build(tmpworkdir):
     assert gettree(tmpworkdir.join('built_at')) == {'libraries.js': '/* === foo.js === */\nvar v="foo js";\n'}
 
 
+def test_build_verbosity(tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': """
+        build_root: "built_at"
+        build:
+          cat:
+            "libraries.js":
+              - "./foo.js"
+        """,
+        'foo.js': 'var v = "foo js";',
+    })
+    result = CliRunner().invoke(cli, ['build'])
+    assert result.exit_code == 0
+    assert '1 files combined to form "libraries.js"' in result.output
+    assert 'appending foo.js' not in result.output
+    result = CliRunner().invoke(cli, ['build', '-v'])
+    assert result.exit_code == 0
+    assert '1 files combined to form "libraries.js"' in result.output
+    assert 'appending foo.js' in result.output
+    result = CliRunner().invoke(cli, ['build', '-q'])
+    assert result.exit_code == 0
+    assert result.output == ''
+
+
 def test_log_setup():
     assert log_config(2)['handlers']['default']['level'] == 'INFO'
-    assert log_config('info')['handlers']['default']['level'] == 'INFO'
+    assert log_config('INFO')['handlers']['default']['level'] == 'INFO'
     assert log_config(3)['handlers']['default']['level'] == 'DEBUG'
-    assert log_config('debug')['handlers']['default']['level'] == 'DEBUG'
+    assert log_config('DEBUG')['handlers']['default']['level'] == 'DEBUG'
