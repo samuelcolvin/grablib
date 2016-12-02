@@ -2,6 +2,7 @@ import re
 import shutil
 from datetime import datetime
 from pathlib import Path
+from typing import Union
 
 import sass
 from jsmin import jsmin
@@ -63,10 +64,19 @@ class Builder:
         main_logger.info('%d files concatenated in %0.0fms', total_files_combined, time_taken)
 
     def sass(self, data):
-        for dest, src in data.items():
-            src_path = self._file_path(src)
+        for dest, d in data.items():
+            include = '/[^_][^/]+\.(?:css|sass|scss)$'
+            exclude = None
+            if isinstance(d, str):
+                d = {'src': d}
+            src_path = self._file_path(d['src'])
             dest_path = self._dest_path(dest)
-            sass_gen = SassGenerator(src_path, dest_path, self.debug)
+            sass_gen = SassGenerator(
+                input_dir=src_path,
+                output_dir=dest_path,
+                include=d.get('include', include),
+                exclude=d.get('exclude', exclude),
+                debug=self.debug)
             sass_gen()
 
     def wipe(self, regexes):
@@ -76,9 +86,6 @@ class Builder:
         regexes = [re.compile(r) for r in regexes]
         for path in self.build_root.glob('**/*'):
             relative_path = str(path.relative_to(self.build_root))
-            if not path.exists():
-                # path already deleted
-                continue
             for regex in regexes:
                 if regex.fullmatch(relative_path):
                     if path.is_dir():
@@ -121,7 +128,12 @@ class Builder:
 class SassGenerator:
     _errors = _files_generated = None
 
-    def __init__(self, input_dir: Path, output_dir: Path, debug: bool=False):
+    def __init__(self, *,
+                 input_dir: Path,
+                 output_dir: Path,
+                 include: str,
+                 exclude: Union[str, None],
+                 debug: bool):
         self._in_dir = input_dir
         assert self._in_dir.is_dir()
         self._out_dir = output_dir
@@ -131,6 +143,8 @@ class SassGenerator:
             self._src_dir = self._out_dir_src
         else:
             self._src_dir = self._in_dir
+        self._include = re.compile(include)
+        self._exclude = exclude and re.compile(exclude)
 
     def __call__(self):
         start = datetime.now()
@@ -159,11 +173,10 @@ class SassGenerator:
                 self.process_file(p)
 
     def process_file(self, f: Path):
-        if f.suffix not in {'.css', '.scss', '.sass'}:
+        print(f)
+        if not self._include.search(str(f)):
             return
-
-        if f.name.startswith('_'):
-            # mixin, not copied
+        if self._exclude and self._exclude.search(str(f)):
             return
 
         rel_path = f.relative_to(self._src_dir)

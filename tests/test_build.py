@@ -156,6 +156,29 @@ def test_sass(tmpworkdir):
     }
 
 
+def test_sass_exclude(tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': """
+        build_root: 'built_at'
+        build:
+          sass:
+            css:
+              src: sass_dir
+              exclude: 'adir/.*$'
+        """,
+        'sass_dir': {
+            'adir/bar.scss': '.bar { color: red};',
+            'foo.scss': '.foo { color: black;}'
+        }
+    })
+    Grab().build()
+    assert gettree(tmpworkdir.join('built_at')) == {
+        'css': {
+            'foo.css': '.foo{color:black}\n'
+        }
+    }
+
+
 def test_sass_debug(tmpworkdir):
     mktree(tmpworkdir, {
         'grablib.yml': """
