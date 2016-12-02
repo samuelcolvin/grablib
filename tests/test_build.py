@@ -201,7 +201,7 @@ def test_rm_all(tmpworkdir):
         'grablib.yml': """
         build_root: "built_at"
         build:
-          wipe: '**/*'
+          wipe: '.*'
         """,
         'built_at': {
             'foo/bar.js': 'x',
@@ -219,8 +219,7 @@ def test_rm_some(tmpworkdir):
         build:
           wipe:
           - boom.txt
-          - another_dir
-          - doesnt_exist
+          - another_dir.*
         """,
         'built_at': {
             'foo/bar.js': 'x',
