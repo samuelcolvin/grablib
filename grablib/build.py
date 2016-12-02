@@ -173,7 +173,6 @@ class SassGenerator:
                 self.process_file(p)
 
     def process_file(self, f: Path):
-        print(f)
         if not self._include.search(str(f)):
             return
         if self._exclude and self._exclude.search(str(f)):

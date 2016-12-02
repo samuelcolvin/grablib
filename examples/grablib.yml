@@ -10,7 +10,7 @@ download:
 debug: true
 build_root: 'static/prod'
 build:
-  wipe: '.'
+  wipe: '.*'
   cat:
     'libraries.js':
       - 'DL/js/jquery.js'
