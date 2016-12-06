@@ -1,9 +1,8 @@
 from click.testing import CliRunner
+from pytest_toolbox import gettree, mktree
 
 from grablib.cli import cli
 from grablib.common import log_config
-
-from .conftest import gettree, mktree
 
 
 def test_simple_wrong_path():

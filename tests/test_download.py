@@ -1,12 +1,11 @@
 from pathlib import Path
 
 import pytest
+from pytest_toolbox import gettree, mktree
 from requests import HTTPError
 
 from grablib import Grab
 from grablib.common import GrablibError
-
-from .conftest import gettree, mktree
 
 FIXTURES = Path(__file__).resolve().parent / Path('fixtures')
 

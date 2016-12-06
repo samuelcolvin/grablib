@@ -1,9 +1,8 @@
 import pytest
+from pytest_toolbox import gettree, mktree
 
 from grablib import Grab
 from grablib.common import GrablibError, setup_logging
-
-from .conftest import gettree, mktree
 
 
 def test_cat(tmpworkdir):
