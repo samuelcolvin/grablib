@@ -151,7 +151,10 @@ class SassGenerator:
         self._errors, self._files_generated = 0, 0
 
         if self._debug:
-            self._out_dir.mkdir(parents=True)
+            self._out_dir.mkdir(parents=True, exist_ok=True)
+            if self._out_dir_src.exists():
+                raise GrablibError('With debug switched on the directory "{}" must not exist before building, '
+                                   'you should delete it with the "wipe" option.'.format(self._out_dir_src))
             shutil.copytree(str(self._in_dir.resolve()), str(self._out_dir_src))
 
         self.process_directory(self._src_dir)

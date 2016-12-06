@@ -203,6 +203,25 @@ def test_sass_debug(tmpworkdir):
     } == gettree(tmpworkdir.join('built_at/css'))
 
 
+def test_sass_debug_src_exists(tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': """
+        build_root: 'built_at'
+        debug: true
+        build:
+          sass:
+            'css': 'sass_dir'
+        """,
+        'sass_dir': {
+            'foo.scss': '.foo { .bar {color: black;}}'
+        },
+        'built_at/css/.src': {},
+    })
+    with pytest.raises(GrablibError) as excinfo:
+        Grab().build()
+    assert excinfo.value.args[0].startswith('With debug switched on the directory "')
+
+
 def test_sass_error(tmpworkdir):
     mktree(tmpworkdir, {
         'grablib.yml': """
