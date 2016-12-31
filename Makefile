@@ -1,7 +1,7 @@
 .PHONY: install
 install:
 	pip install -U pip
-	pip install .
+	pip install .[build]
 	pip install -r tests/requirements.txt
 
 .PHONY: isort

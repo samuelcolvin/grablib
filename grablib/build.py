@@ -4,9 +4,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Union
 
-import sass
-from jsmin import jsmin
-
 from .common import GrablibError, main_logger, progress_logger
 
 
@@ -114,10 +111,21 @@ class Builder:
         else:
             return Path(src_path).resolve()
 
+    @property
+    def jsmin(self):
+        try:
+            from jsmin import jsmin
+        except ImportError as e:
+            main_logger.error('ImportError importing jsmin: %s', e)
+            raise GrablibError(
+                'Error importing jsmin. Build requirements probably not installed, run `pip install grablib[build]`'
+            )
+        return jsmin
+
     def _read_file(self, file_path: Path):
         content = file_path.read_text()
         if not self.debug and file_path.name.endswith('.js') and not file_path.name.endswith('.min.js'):
-            return jsmin(content, quote_chars='\'"`')
+            return self.jsmin(content, quote_chars='\'"`')
         return content
 
     def _write(self, new_path: Path, data):
@@ -204,7 +212,7 @@ class SassGenerator:
 
     def generate_css(self, f: Path, map_path=None):
         output_style = 'nested' if self._debug else 'compressed'
-
+        sass = self.get_sass()
         try:
             return sass.compile(
                 filename=str(f),
@@ -215,3 +223,13 @@ class SassGenerator:
         except sass.CompileError as e:
             self._errors += 1
             main_logger.error('"%s", compile error: %s', f, e)
+
+    def get_sass(self):
+        try:
+            import sass
+        except ImportError as e:
+            main_logger.error('ImportError importing sass: %s', e)
+            raise GrablibError(
+                'Error importing sass. Build requirements probably not installed, run `pip install grablib[build]`'
+            )
+        return sass

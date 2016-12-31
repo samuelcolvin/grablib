@@ -16,6 +16,18 @@ Kind of like bower, but in Python, and simpler, and with some more features.
 
 Definition files can either be JSON or YAML (see `examples`_).
 
+Installation
+------------
+
+.. code::
+
+    pip install grablib[build]
+
+(You can also use simply ``pip install grablib`` to install without build requirements,
+this is useful when you're not using grablib for building as it avoids installing
+``jsmin`` and ``libsass`` which can be slow.)
+
+
 CLI Usage
 ---------
 

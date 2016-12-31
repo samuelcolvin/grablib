@@ -39,9 +39,13 @@ setup(
     """,
     install_requires=[
         'click>=6.6',
-        'jsmin>=2.2.1',
-        'libsass>=0.11.2',
         'PyYAML>=3.12',
-        'requests>=2.12.0',
+        'requests>=2.12',
     ],
+    extras_require={
+        'build': [
+            'jsmin>=2.2.1',
+            'libsass>=0.12',
+        ],
+    }
 )

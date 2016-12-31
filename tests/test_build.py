@@ -1,8 +1,18 @@
+import builtins
 import pytest
 from pytest_toolbox import gettree, mktree
 
 from grablib import Grab
 from grablib.common import GrablibError, setup_logging
+
+
+real_import = builtins.__import__
+
+
+def mocked_import(name, globals=None, locals=None, fromlist=(), level=0):
+    if name in {'jsmin', 'sass'}:
+        raise ImportError('fake error for %s' % name)
+    return real_import(name, globals, locals, fromlist, level)
 
 
 def test_cat(tmpworkdir):
@@ -198,7 +208,7 @@ def test_sass_debug(tmpworkdir):
             'foo.scss': '.foo { .bar {color: black;}}'
         },
         'foo.map': '{\n\t"version": 3,\n\t"file": ".src/foo.css",\n\t'
-                   '"sources": [\n\t\t".src/foo.scss"\n\t],\n\t"mappings": "AAAA,AAAO,IAAH,CAAG,IAAI,...'
+                   '"sources": [\n\t\t".src/foo.scss"\n\t],\n\t"names": [],\n\t"mappings": "AAAA,AAAO,I...'
     } == gettree(tmpworkdir.join('built_at/css'))
 
 
@@ -280,3 +290,38 @@ def test_rm_some(tmpworkdir):
         },
         'remain.txt': 'y',
     } == gettree(tmpworkdir.join('built_at'))
+
+
+def test_jsmin_import_error(mocker, tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': """
+        build_root: "built_at"
+        build:
+          cat:
+            "libs.min.js":
+              - "./bar.js"
+        """,
+        'bar.js': 'var v = "bar js";',
+    })
+    mock_import = mocker.patch('builtins.__import__')
+    mock_import.side_effect = mocked_import
+    with pytest.raises(GrablibError):
+        Grab().build()
+
+
+def test_sass_import_error(mocker, tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': """
+        build_root: "built_at"
+        build:
+          sass:
+            "css": "sass_dir"
+        """,
+        'sass_dir': {
+            'adir/test.scss': 'a { color: red};',
+        }
+    })
+    mock_import = mocker.patch('builtins.__import__')
+    mock_import.side_effect = mocked_import
+    with pytest.raises(GrablibError):
+        Grab().build()
