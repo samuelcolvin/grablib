@@ -2,7 +2,7 @@ import re
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Union, Callable
+from typing import Callable, Union
 
 from .common import GrablibError, main_logger, progress_logger
 

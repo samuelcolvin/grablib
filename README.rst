@@ -3,7 +3,7 @@ grablib
 
 |Build Status| |codecov.io| |PyPI Status| |license|
 
-Copyright (C) 2013-2016 Samuel Colvin
+Copyright (C) 2013-2017 Samuel Colvin
 
 Kind of like bower, but in Python, and simpler, and with some more features.
 
@@ -18,6 +18,8 @@ Definition files can either be JSON or YAML (see `examples`_).
 
 Installation
 ------------
+
+grablib requires **python 3.5+**.
 
 .. code::
 
