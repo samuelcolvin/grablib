@@ -2,7 +2,7 @@ import re
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Union
+from typing import Union, Callable
 
 from .common import GrablibError, main_logger, progress_logger
 
@@ -18,6 +18,7 @@ class Builder:
         self.download_root = download_root and Path(download_root).resolve()
         self.files_built = 0
         self.debug = debug
+        self._jsmin = None
 
     def __call__(self):
         wipe_data = self.build.get('wipe', None)
@@ -112,15 +113,18 @@ class Builder:
             return Path(src_path).resolve()
 
     @property
-    def jsmin(self):
-        try:
-            from jsmin import jsmin
-        except ImportError as e:
-            main_logger.error('ImportError importing jsmin: %s', e)
-            raise GrablibError(
-                'Error importing jsmin. Build requirements probably not installed, run `pip install grablib[build]`'
-            )
-        return jsmin
+    def jsmin(self) -> Callable[[str, str], str]:
+        if self._jsmin is None:
+            try:
+                from jsmin import jsmin
+            except ImportError as e:
+                main_logger.error('ImportError importing jsmin: %s', e)
+                raise GrablibError(
+                    'Error importing jsmin. Build requirements probably not installed, run `pip install grablib[build]`'
+                )
+            else:
+                self._jsmin = jsmin
+        return self._jsmin
 
     def _read_file(self, file_path: Path):
         content = file_path.read_text()

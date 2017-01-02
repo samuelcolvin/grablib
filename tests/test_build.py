@@ -305,8 +305,10 @@ def test_jsmin_import_error(mocker, tmpworkdir):
     })
     mock_import = mocker.patch('builtins.__import__')
     mock_import.side_effect = mocked_import
-    with pytest.raises(GrablibError):
+    with pytest.raises(GrablibError) as exc_info:
         Grab().build()
+    assert exc_info.value.args[0] == ('Error importing jsmin. Build requirements probably not installed, '
+                                      'run `pip install grablib[build]`')
 
 
 def test_sass_import_error(mocker, tmpworkdir):
@@ -323,5 +325,7 @@ def test_sass_import_error(mocker, tmpworkdir):
     })
     mock_import = mocker.patch('builtins.__import__')
     mock_import.side_effect = mocked_import
-    with pytest.raises(GrablibError):
+    with pytest.raises(GrablibError) as exc_info:
         Grab().build()
+    assert exc_info.value.args[0] == ('Error importing sass. Build requirements probably not installed, '
+                                      'run `pip install grablib[build]`')
