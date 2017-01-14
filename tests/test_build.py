@@ -202,14 +202,15 @@ def test_sass_debug(tmpworkdir):
         }
     })
     Grab().build()
+    tree = gettree(tmpworkdir.join('built_at/css'))
+    foo_map = tree.pop('foo.map')
     assert {
         'foo.css': '.foo .bar {\n  color: black; }\n\n/*# sourceMappingURL=foo.map */',
         '.src': {
             'foo.scss': '.foo { .bar {color: black;}}'
-        },
-        'foo.map': '{\n\t"version": 3,\n\t"file": ".src/foo.css",\n\t'
-                   '"sources": [\n\t\t".src/foo.scss"\n\t],\n\t"names": [],\n\t"mappings": "AAAA,AAAO,I...'
-    } == gettree(tmpworkdir.join('built_at/css'))
+        }
+    } == tree
+    assert foo_map.startswith('{\n\t"version": 3,\n\t"file": ".src/foo.css"')
 
 
 def test_sass_debug_src_exists(tmpworkdir):
@@ -329,3 +330,28 @@ def test_sass_import_error(mocker, tmpworkdir):
         Grab().build()
     assert exc_info.value.args[0] == ('Error importing sass. Build requirements probably not installed, '
                                       'run `pip install grablib[build]`')
+
+
+def test_sass_replace(tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': """
+        build_root: built_at
+        debug: false
+        build:
+          sass:
+            css:
+              src: sass_dir
+              replace:
+                "foo.scss$":
+                  black: white
+        """,
+        'sass_dir': {
+            'foo.scss': '.foo { .bar {color: black;}}',
+            'bar.scss': 'a {color: black;}',
+        }
+    })
+    Grab().build()
+    assert {
+        'foo.css': '.foo .bar{color:white}\n',
+        'bar.css': 'a{color:black}\n',
+    } == gettree(tmpworkdir.join('built_at/css'))

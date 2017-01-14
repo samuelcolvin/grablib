@@ -2,7 +2,7 @@ import re
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Union
+from typing import Callable
 
 from .common import GrablibError, main_logger, progress_logger
 
@@ -63,8 +63,6 @@ class Builder:
 
     def sass(self, data):
         for dest, d in data.items():
-            include = '/[^_][^/]+\.(?:css|sass|scss)$'
-            exclude = None
             if isinstance(d, str):
                 d = {'src': d}
             src_path = self._file_path(d['src'])
@@ -72,8 +70,9 @@ class Builder:
             sass_gen = SassGenerator(
                 input_dir=src_path,
                 output_dir=dest_path,
-                include=d.get('include', include),
-                exclude=d.get('exclude', exclude),
+                include=d.get('include'),
+                exclude=d.get('exclude'),
+                replace=d.get('replace'),
                 debug=self.debug)
             sass_gen()
 
@@ -143,9 +142,10 @@ class SassGenerator:
     def __init__(self, *,
                  input_dir: Path,
                  output_dir: Path,
-                 include: str,
-                 exclude: Union[str, None],
-                 debug: bool):
+                 include: str=None,
+                 exclude: str=None,
+                 replace: dict=None,
+                 debug: bool=False):
         self._in_dir = input_dir
         assert self._in_dir.is_dir()
         self._out_dir = output_dir
@@ -155,8 +155,9 @@ class SassGenerator:
             self._src_dir = self._out_dir_src
         else:
             self._src_dir = self._in_dir
-        self._include = re.compile(include)
+        self._include = re.compile(include or '/[^_][^/]+\.(?:css|sass|scss)$')
         self._exclude = exclude and re.compile(exclude)
+        self._replace = replace or {}
 
     def __call__(self):
         start = datetime.now()
@@ -204,6 +205,11 @@ class SassGenerator:
         css = self.generate_css(f, map_path)
         if not css:
             return
+
+        for path_regex, regex_map in self._replace.items():
+            if re.search(path_regex, str(f)):
+                for pattern, repl in regex_map.items():
+                    css = re.sub(pattern, repl, css)
 
         css_path.parent.mkdir(parents=True, exist_ok=True)
         if self._debug:
