@@ -20,7 +20,7 @@ script:
 - make lint
 - make test
 - grablib -V
-- make check_tag_version
+- ./tests/check_tag.py
 
 after_success:
 - ls -lha

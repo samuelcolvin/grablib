@@ -23,8 +23,3 @@ test:
 testcov:
 	py.test --cov=grablib && (echo "building coverage html"; coverage html)
 
-.PHONY: check_tag_version
-check_tag_version:
-	python3 -c "import sys, os; \
-		from grablib.version import VERSION; \
-		os.getenv('TRAVIS_TAG') not in (None, '', str(VERSION)) and sys.exit(1)"
