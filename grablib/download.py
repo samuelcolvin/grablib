@@ -42,6 +42,7 @@ class Downloader:
         aliases and self._aliases.update(aliases)
         self._downloaded = 0
         self._skipped = 0
+        self._stale_deleted = 0
         self._lock_file = lock and Path(lock)
         self._new_lock = []
         self._current_lock = self._stale_files = None
@@ -68,14 +69,14 @@ class Downloader:
                 raise GrablibError('Error downloading "{}" to "{}"'.format(url, value)) from e
         self._delete_stale()
         self._save_lock()
-        main_logger.info('Download finished: %d files downloaded, %d existing and ignored',
-                         self._downloaded, self._skipped)
+        main_logger.info('Download finished: %d files downloaded, %d stale files deleted, %d existing and ignored',
+                         self._downloaded, self._stale_deleted, self._skipped)
 
     def _process_normal_file(self, url, dst):
         new_path = self._file_path(url, dst, regex=r'/(?P<filename>[^/]+)$')
         lock_hash, unchanged = self._file_exists_unchanged(url, new_path)
         if unchanged:
-            self._add_to_lock(url, *self._current_lock[url])
+            self._lock(url, *self._current_lock[url])
             self._skipped += 1
             progress_logger.debug('%s already exists unchanged, not downloading', url)
             return
@@ -103,7 +104,7 @@ class Downloader:
         value_hash = self._data_hash(json.dumps(value, sort_keys=True).encode())
         lock_hash, unchanged = self._zip_exists_unchanged(url, value_hash)
         if unchanged:
-            [self._add_to_lock(url, name, lock_hash) for name, lock_hash in self._current_lock[url]]
+            [self._lock(url, name, lock_hash) for name, lock_hash in self._current_lock[url]]
             self._skipped += 1
             progress_logger.debug('%s already exists unchanged, not downloading', url)
             return
@@ -113,8 +114,8 @@ class Downloader:
         if lock_hash and remote_hash != lock_hash:
             progress_logger.error('Security warning: hash of remote file %s has changed!', url)
             raise GrablibError('remote hash mismatch')
-        self._add_to_lock(url, ZIP_VALUE_REF, value_hash)
-        self._add_to_lock(url, ZIP_RAW_REF, remote_hash)
+        self._lock(url, ZIP_VALUE_REF, value_hash)
+        self._lock(url, ZIP_RAW_REF, remote_hash)
         zcopied = self._extract_zip(url, content, value)
         progress_logger.info('  %d files copied from zip archive', zcopied)
         self._downloaded += 1
@@ -168,7 +169,7 @@ class Downloader:
 
     def _delete_stale(self):
         """
-        Delete files associated with anything left in self._stale_files. also delete empty directories
+        Delete files left in self._stale_files. Also delete their directories if empty.
         """
         for name, hash_ in self._stale_files.items():
             path = self.download_root.joinpath(name)
@@ -178,17 +179,18 @@ class Downloader:
             if current_hash == hash_:
                 progress_logger.info('deleting: %s which is stale...', name)
                 path.unlink()
+                self._stale_deleted += 1
                 while True:
                     path = path.parent
                     if path == self.download_root or list(path.iterdir()):
                         break
-                    progress_logger.info('%s is empty, deleting...', path.relative_to(self.download_root))
+                    progress_logger.info('deleting: %s which is stale..', path.relative_to(self.download_root))
                     path.rmdir()
             else:
-                progress_logger.error('Not deleting "%s" which exists in the lock file but not the definition '
+                progress_logger.error('Not deleting "%s" which is in the lock file but not the definition '
                                       'file, however appears to have been modified since it was downloaded. '
-                                      'Please check and delete the file manually', name)
-                raise GrablibError('state file modified')
+                                      'Please check and delete the file manually.', name)
+                raise GrablibError('stale file modified')
 
     def _file_path(self, src_path, dest, regex):
         """
@@ -232,24 +234,19 @@ class Downloader:
         new_path.parent.mkdir(parents=True, exist_ok=True)
         new_path.write_bytes(data)
         h = self._path_hash(new_path)
-        self._add_to_lock(url, str(new_path.relative_to(self.download_root)), h)
+        self._lock(url, str(new_path.relative_to(self.download_root)), h)
 
-    def _add_to_lock(self, url: str, name: str, hash_: str):
+    def _lock(self, url: str, name: str, hash_: str):
+        """
+        Add details of the files downloaded to _new_lock so they can be saved to the lock file.
+        Also remove path from _stale_files, whatever remains at the end therefore is stale and can be deleted.
+        """
         self._new_lock.append({
             'url': url,
             'name': name,
             'hash': hash_,
         })
-        self._unstale(name)
-
-    def _unstale(self, name: str):
-        """
-        remove path from _stale_files, whatever remains at the end therefore is stale and can be deleted
-        """
-        try:
-            self._stale_files.pop(name)
-        except KeyError:
-            pass
+        self._stale_files.pop(name, None)
 
     def _path_hash(self, path: Path):
         if not path.exists():

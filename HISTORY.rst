@@ -3,8 +3,8 @@
 History
 -------
 
-0.5.0 (TBD)
------------
+0.5.0 (2017-01-14)
+------------------
 * git tag check on build
 * add ``replace`` argument to ``build > sass`` to allow output files to be modified
   with regex find & replace statements.
