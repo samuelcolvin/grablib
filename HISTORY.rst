@@ -8,6 +8,7 @@ History
 * git tag check on build
 * add ``replace`` argument to ``build > sass`` to allow output files to be modified
   with regex find & replace statements.
+* adding support for deleting stale files defined in ``.grablib.lock``
 
 0.4.0 (2017-01-02)
 ------------------

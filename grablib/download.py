@@ -43,7 +43,7 @@ class Downloader:
         self._skipped = 0
         self._lock_file = lock and Path(lock)
         self._new_lock = []
-        self._current_lock = {}
+        self._current_lock = self._stale_files = None
         self._session = requests.Session()
 
     def __call__(self):
@@ -52,7 +52,7 @@ class Downloader:
         """
         main_logger.info('downloading files to: %s', self.download_root)
 
-        self._read_lock()
+        self._current_lock, self._stale_files = self._read_lock()
         for url_base, value in self.download.items():
             url = self._setup_url(url_base)
             try:
@@ -65,6 +65,7 @@ class Downloader:
                 if isinstance(value, OrderedDict):
                     value = dict(value)
                 raise GrablibError('Error downloading "{}" to "{}"'.format(url, value)) from e
+        self._delete_stale()
         self._save_lock()
         main_logger.info('Download finished: %d files downloaded, %d existing and ignored',
                          self._downloaded, self._skipped)
@@ -114,7 +115,7 @@ class Downloader:
         self._add_to_lock(url, ZIP_VALUE_REF, value_hash)
         self._add_to_lock(url, ZIP_RAW_REF, remote_hash)
         zcopied = self._extract_zip(url, content, value)
-        progress_logger.info('%d files copied from zip archive', zcopied)
+        progress_logger.info('  %d files copied from zip archive', zcopied)
         self._downloaded += 1
 
     def _extract_zip(self, url, content, value):
@@ -164,6 +165,30 @@ class Downloader:
                 found_change = True
         return zip_hash, not found_change and zip_hash is not None
 
+    def _delete_stale(self):
+        """
+        Delete files associated with anything left in self._stale_files. also delete empty directories
+        """
+        for name, old_hash in self._stale_files.items():
+            path = self.download_root.joinpath(name)
+            if not path.exists():
+                continue
+            current_hash = self._path_hash(path)
+            if current_hash == old_hash:
+                progress_logger.info('deleting: %s which is stale...', name)
+                path.unlink()
+                while True:
+                    path = path.parent
+                    if path == self.download_root or list(path.iterdir()):
+                        break
+                    progress_logger.info('%s is empty, deleting...', path.relative_to(self.download_root))
+                    path.rmdir()
+            else:
+                progress_logger.error('Not deleting "%s" which exists in the lock file but not the definition '
+                                      'file, however appears to have been modified since it was downloaded. '
+                                      'Please check and delete the file manually', name)
+                raise GrablibError('state file modified')
+
     def _file_path(self, src_path, dest, regex):
         """
         check src_path complies with regex and generate new filename
@@ -208,12 +233,22 @@ class Downloader:
         h = self._path_hash(new_path)
         self._add_to_lock(url, str(new_path.relative_to(self.download_root)), h)
 
-    def _add_to_lock(self, url: str, name: str, _hash: str):
+    def _add_to_lock(self, url: str, name: str, hash_: str):
         self._new_lock.append({
             'url': url,
             'name': name,
-            'hash': _hash,
+            'hash': hash_,
         })
+        self._unstale(name)
+
+    def _unstale(self, name: str):
+        """
+        remove path from _stale_files, whatever remains at the end therefore is stale and can be deleted
+        """
+        try:
+            self._stale_files.pop(name)
+        except KeyError:
+            pass
 
     def _path_hash(self, path: Path):
         if not path.exists():
@@ -224,19 +259,29 @@ class Downloader:
     def _data_hash(self, data: bytes):
         return hashlib.md5(data).hexdigest()
 
-    def _read_lock(self):
+    def _read_lock(self) -> tuple:
+        current_lock, stale_files = {}, {}
         if self._lock_file and self._lock_file.exists():
             with self._lock_file.open() as f:
                 for line in f:
                     _hash, url, name = line.strip('\n').split(' ')
                     v = name, _hash
-                    existing_v = self._current_lock.get(url)
+                    existing_v = current_lock.get(url)
                     if existing_v is None:
-                        self._current_lock[url] = v
+                        # if current_lock doesn't contain url add it as a single tuple
+                        current_lock[url] = v
                     elif isinstance(existing_v, tuple):
-                        self._current_lock[url] = [existing_v, v]
+                        # if current_lock[url] is just a single tuple convert it to a list of tuples and append v
+                        current_lock[url] = [existing_v, v]
                     else:
+                        # if current_lock[url] is already a list append v to that list
+                        # existing_v is mutable so this is equivalent to current_lock[url] += [v]
                         existing_v.append(v)
+        for name_hashes in current_lock.values():
+            if isinstance(name_hashes, tuple):
+                name_hashes = [name_hashes]
+            stale_files.update({name: hash_ for name, hash_ in name_hashes})
+        return current_lock, stale_files
 
     def _save_lock(self):
         if self._lock_file is None:

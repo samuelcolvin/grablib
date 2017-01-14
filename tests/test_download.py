@@ -227,6 +227,7 @@ b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js file.js
 b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file2.js file2.js\n"""
     }
     tmpworkdir.join('droot/file.js').remove()
+    print('##################')
     Grab().download()
     assert mock_requests_get.call_count == 3
     assert gettree(tmpworkdir, max_len=None) == {
@@ -258,7 +259,7 @@ def test_lock_local_file_changes(mocker, tmpworkdir):
     assert mock_requests_get.call_count == 2
     assert gettree(tmpworkdir) == {
         'grablib.yml': "download:\n  'http://wherever.com/file.js': x2",
-        'test-download-dir': {'x': 'response text', 'x2': 'response text'},
+        'test-download-dir': {'x2': 'response text'},
         '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x2\n'
     }
 
@@ -336,3 +337,140 @@ def test_lock_zip_remote_changed(mocker, tmpworkdir):
     with pytest.raises(GrablibError):
         Grab().download()
     assert mock_requests_get.call_count == 2
+
+
+def test_lock_unchanged(mocker, tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': "download:\n  'http://wherever.com/file.js': x",
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x\n',
+    })
+    mock_requests_get = mocker.patch('grablib.download.requests.Session.get')
+    mock_requests_get.return_value = MockResponse()
+    grab = Grab(download_root='test-download-dir')
+    grab.download()
+    assert gettree(tmpworkdir) == {
+        'grablib.yml': "download:\n  'http://wherever.com/file.js': x",
+        'test-download-dir': {'x': 'response text'},
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x\n'
+    }
+
+
+def test_lock_extended(mocker, tmpworkdir):
+    gl = """\
+    download:
+      'http://wherever.com/file1.js': x
+      'http://wherever.com/file2.js': y
+    """
+    mktree(tmpworkdir, {
+        'grablib.yml': gl,
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file1.js x\n',
+    })
+    mock_requests_get = mocker.patch('grablib.download.requests.Session.get')
+    mock_requests_get.return_value = MockResponse()
+    grab = Grab(download_root='test-download-dir')
+    grab.download()
+    assert gettree(tmpworkdir, max_len=0) == {
+        'grablib.yml': gl,
+        'test-download-dir': {'x': 'response text', 'y': 'response text'},
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file1.js x\n'
+                         'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file2.js y\n'
+    }
+
+
+def test_lock_truncated_file_deleted(mocker, tmpworkdir):
+    gl = """\
+    download:
+      'http://wherever.com/file1.js': x
+    """
+    mktree(tmpworkdir, {
+        'grablib.yml': gl,
+        'test-download-dir': {'x': 'response text', 'y': 'response text'},
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file1.js x\n'
+                         'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file2.js y\n',
+    })
+    mock_requests_get = mocker.patch('grablib.download.requests.Session.get')
+    mock_requests_get.return_value = MockResponse()
+    grab = Grab(download_root='test-download-dir')
+    grab.download()
+    assert gettree(tmpworkdir, max_len=0) == {
+        'grablib.yml': gl,
+        'test-download-dir': {'x': 'response text'},
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file1.js x\n'
+    }
+
+
+def test_changed_file_url(mocker, tmpworkdir):
+    gl = """\
+    download:
+      'http://wherever.com/file_different.js': x
+    """
+    mktree(tmpworkdir, {
+        'grablib.yml': gl,
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x\n',
+        'test-download-dir': {'x': 'response text'},
+    })
+    mock_requests_get = mocker.patch('grablib.download.requests.Session.get')
+    mock_requests_get.return_value = MockResponse()
+    grab = Grab(download_root='test-download-dir')
+    grab.download()
+    assert gettree(tmpworkdir, max_len=0) == {
+        'grablib.yml': gl,
+        'test-download-dir': {'x': 'response text'},
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file_different.js x\n'
+    }
+
+
+def test_stale_changed(mocker, tmpworkdir):
+    gl = """\
+    download:
+      'http://wherever.com/file.js': x
+    """
+    mktree(tmpworkdir, {
+        'grablib.yml': gl,
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js old\n',
+        'test-download-dir': {'old': 'response text - different'},
+    })
+    mock_requests_get = mocker.patch('grablib.download.requests.Session.get')
+    mock_requests_get.return_value = MockResponse()
+    grab = Grab(download_root='test-download-dir')
+    with pytest.raises(GrablibError):
+        grab.download()
+    assert gettree(tmpworkdir) == {
+        'grablib.yml': gl,
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js old\n',
+        'test-download-dir': {'old': 'response text - different', 'x': 'response text'},
+    }
+
+
+def test_delete_stale_dir(mocker, tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': 'download: {}',
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js path/to/x\n',
+        'test-download-dir/path/to': {'x': 'response text'},
+    })
+    mock_requests_get = mocker.patch('grablib.download.requests.Session.get')
+    mock_requests_get.return_value = MockResponse()
+    grab = Grab(download_root='test-download-dir')
+    grab.download()
+    assert gettree(tmpworkdir, max_len=0) == {
+        'grablib.yml': 'download: {}',
+        'test-download-dir': {},
+        '.grablib.lock': '\n'
+    }
+
+
+def test_already_deleted(mocker, tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': 'download: {}',
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js path/to/x\n',
+        'test-download-dir': {'foo': 'bar'},
+    })
+    mock_requests_get = mocker.patch('grablib.download.requests.Session.get')
+    mock_requests_get.return_value = MockResponse()
+    grab = Grab(download_root='test-download-dir')
+    grab.download()
+    assert gettree(tmpworkdir, max_len=0) == {
+        'grablib.yml': 'download: {}',
+        'test-download-dir': {'foo': 'bar'},
+        '.grablib.lock': '\n'
+    }
