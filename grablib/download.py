@@ -17,6 +17,7 @@ ALIASES = {
 }
 ZIP_VALUE_REF = ':zip-lookup'
 ZIP_RAW_REF = ':zip-raw'
+STALE = ':stale'
 
 
 class Downloader:
@@ -169,12 +170,12 @@ class Downloader:
         """
         Delete files associated with anything left in self._stale_files. also delete empty directories
         """
-        for name, old_hash in self._stale_files.items():
+        for name, hash_ in self._stale_files.items():
             path = self.download_root.joinpath(name)
             if not path.exists():
                 continue
             current_hash = self._path_hash(path)
-            if current_hash == old_hash:
+            if current_hash == hash_:
                 progress_logger.info('deleting: %s which is stale...', name)
                 path.unlink()
                 while True:
@@ -261,11 +262,14 @@ class Downloader:
 
     def _read_lock(self) -> tuple:
         current_lock, stale_files = {}, {}
+        comment = re.compile('^ *#')
         if self._lock_file and self._lock_file.exists():
             with self._lock_file.open() as f:
                 for line in f:
-                    _hash, url, name = line.strip('\n').split(' ')
-                    v = name, _hash
+                    if comment.match(line):
+                        continue
+                    hash_, url, name = line.strip('\n').split(' ')
+                    v = name, hash_
                     existing_v = current_lock.get(url)
                     if existing_v is None:
                         # if current_lock doesn't contain url add it as a single tuple
@@ -277,6 +281,7 @@ class Downloader:
                         # if current_lock[url] is already a list append v to that list
                         # existing_v is mutable so this is equivalent to current_lock[url] += [v]
                         existing_v.append(v)
+
         for name_hashes in current_lock.values():
             if isinstance(name_hashes, tuple):
                 name_hashes = [name_hashes]
@@ -287,4 +292,14 @@ class Downloader:
         if self._lock_file is None:
             return
         self._new_lock.sort(key=lambda v: (v['url'], v['name']))
-        self._lock_file.write_text('\n'.join('{hash} {url} {name}'.format(**v) for v in self._new_lock) + '\n')
+        text = '\n'.join('{hash} {url} {name}'.format(**v) for v in self._new_lock)
+        if self._stale_files:
+            if text:
+                text += '\n'
+            text += (
+                '# "stale" files which grablib should delete where found, '
+                'you can delete these once everyone has run grablib\n'
+            )
+            text += '\n'.join('{} {} {}'.format(h, STALE, n) for n, h in sorted(self._stale_files.items()))
+        text += '\n'
+        self._lock_file.write_text(text)

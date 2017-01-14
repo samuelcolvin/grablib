@@ -257,10 +257,13 @@ def test_lock_local_file_changes(mocker, tmpworkdir):
     })
     Grab(download_root='test-download-dir').download()
     assert mock_requests_get.call_count == 2
-    assert gettree(tmpworkdir) == {
+    assert gettree(tmpworkdir, max_len=0) == {
         'grablib.yml': "download:\n  'http://wherever.com/file.js': x2",
         'test-download-dir': {'x2': 'response text'},
         '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js x2\n'
+                         '# "stale" files which grablib should delete where found, '
+                         'you can delete these once everyone has run grablib\n'
+                         'b5a3344a4b3651ebd60a1e15309d737c :stale x\n'
     }
 
 
@@ -377,7 +380,7 @@ def test_lock_extended(mocker, tmpworkdir):
     }
 
 
-def test_lock_truncated_file_deleted(mocker, tmpworkdir):
+def test_lock_file_removed(mocker, tmpworkdir):
     gl = """\
     download:
       'http://wherever.com/file1.js': x
@@ -396,6 +399,9 @@ def test_lock_truncated_file_deleted(mocker, tmpworkdir):
         'grablib.yml': gl,
         'test-download-dir': {'x': 'response text'},
         '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file1.js x\n'
+                         '# "stale" files which grablib should delete where found, '
+                         'you can delete these once everyone has run grablib\n'
+                         'b5a3344a4b3651ebd60a1e15309d737c :stale y\n'
     }
 
 
@@ -455,7 +461,9 @@ def test_delete_stale_dir(mocker, tmpworkdir):
     assert gettree(tmpworkdir, max_len=0) == {
         'grablib.yml': 'download: {}',
         'test-download-dir': {},
-        '.grablib.lock': '\n'
+        '.grablib.lock': '# "stale" files which grablib should delete where found, '
+                         'you can delete these once everyone has run grablib\n'
+                         'b5a3344a4b3651ebd60a1e15309d737c :stale path/to/x\n'
     }
 
 
@@ -472,5 +480,37 @@ def test_already_deleted(mocker, tmpworkdir):
     assert gettree(tmpworkdir, max_len=0) == {
         'grablib.yml': 'download: {}',
         'test-download-dir': {'foo': 'bar'},
-        '.grablib.lock': '\n'
+        '.grablib.lock': '# "stale" files which grablib should delete where found, '
+                         'you can delete these once everyone has run grablib\n'
+                         'b5a3344a4b3651ebd60a1e15309d737c :stale path/to/x\n'
+    }
+
+
+def test_stale_lock(mocker, tmpworkdir):
+    gl = """\
+    download:
+      'http://wherever.com/file.js': foo
+    """
+    lock = (
+        '# this is a comment\n'
+        'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js foo\n'
+        ' #so is this\n'
+        'b5a3344a4b3651ebd60a1e15309d737c :stale to_delete\n'
+    )
+    mktree(tmpworkdir, {
+        'grablib.yml': gl,
+        '.grablib.lock': lock,
+        'test-download-dir': {'foo': 'response text', 'to_delete': 'response text'},
+    })
+    mock_requests_get = mocker.patch('grablib.download.requests.Session.get')
+    mock_requests_get.return_value = MockResponse()
+    grab = Grab(download_root='test-download-dir')
+    grab.download()
+    assert gettree(tmpworkdir, max_len=0) == {
+        'grablib.yml': gl,
+        '.grablib.lock': 'b5a3344a4b3651ebd60a1e15309d737c http://wherever.com/file.js foo\n'
+                         '# "stale" files which grablib should delete where found, '
+                         'you can delete these once everyone has run grablib\n'
+                         'b5a3344a4b3651ebd60a1e15309d737c :stale to_delete\n',
+        'test-download-dir': {'foo': 'response text'},
     }
