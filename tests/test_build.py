@@ -344,6 +344,7 @@ def test_sass_replace(tmpworkdir):
               replace:
                 "foo.scss$":
                   black: white
+                  'black;': "shouldn't change"
         """,
         'sass_dir': {
             'foo.scss': '.foo { .bar {color: black;}}',
@@ -355,3 +356,54 @@ def test_sass_replace(tmpworkdir):
         'foo.css': '.foo .bar{color:white}\n',
         'bar.css': 'a{color:black}\n',
     } == gettree(tmpworkdir.join('built_at/css'))
+
+
+def test_sass_clever_import(tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': """
+        download_root: downloaded2
+        build_root: built_at
+        debug: false
+        build:
+          sass:
+            css: sass_dir
+        """,
+        'downloaded2': {
+            'x.css': '.x {width:100px}'
+        },
+        'sass_dir': {
+            'foo.scss': "@import 'SRC/path/to/bar';\n@import 'DL/x';",
+            'path/to/_bar.scss': 'a {color: black;}'
+        }
+    })
+    Grab().build()
+    assert {
+        'foo.css': 'a{color:black}.x{width:100px}\n',
+    } == gettree(tmpworkdir.join('built_at/css'))
+
+
+def test_sass_clever_import_debug(tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': """
+        build_root: built_at
+        debug: true
+        build:
+          sass:
+            css: sass_dir
+        """,
+        'sass_dir': {
+            'foo.scss': "@import 'SRC/bar';",
+            '_bar.scss': 'a {color: black;}'
+        }
+    })
+    Grab().build()
+    tree = gettree(tmpworkdir.join('built_at/css'))
+    tree.pop('foo.map')
+    assert {
+        '.src': {
+            'foo.scss': "@import 'SRC/bar';",
+            '_bar.scss': 'a {color: black;}'
+        },
+        'foo.css': 'a {\n  color: black; }\n\n'
+                   '/*# sourceMappingURL=foo.map */'
+    } == tree

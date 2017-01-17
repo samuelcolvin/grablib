@@ -13,7 +13,7 @@ click.disable_unicode_literals_warning = True
 @click.version_option(VERSION, '-V', '--version')
 @click.argument('action', type=click.Choice(['download', 'build']), required=False, metavar='[download / build]')
 @click.option('-f', '--config-file', type=click.Path(exists=True, dir_okay=False, file_okay=True), required=False)
-@click.option('--no-debug/--debug', 'debug', default=None)
+@click.option('--debug/--no-debug', 'debug', default=None)
 @click.option('-v/-q', '--verbose/--quiet', 'verbose', default=None)
 def cli(action, config_file, debug, verbose):
     """

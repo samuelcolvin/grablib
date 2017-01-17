@@ -6,6 +6,9 @@ from typing import Callable
 
 from .common import GrablibError, main_logger, progress_logger
 
+STARTS_DOWNLOAD = re.compile('^(?:DOWNLOAD|DL)/')
+STARTS_SRC = re.compile('^SRC/')
+
 
 class Builder:
     """
@@ -70,6 +73,7 @@ class Builder:
             sass_gen = SassGenerator(
                 input_dir=src_path,
                 output_dir=dest_path,
+                download_root=self.download_root,
                 include=d.get('include'),
                 exclude=d.get('exclude'),
                 replace=d.get('replace'),
@@ -101,12 +105,10 @@ class Builder:
         new_path.relative_to(self.build_root)
         return new_path
 
-    starts_download = re.compile('^(?:DOWNLOAD|DL)/')
-
     def _file_path(self, src_path: str):
-        if self.starts_download.match(src_path):
+        if STARTS_DOWNLOAD.match(src_path):
             assert self.download_root
-            _src_path = self.starts_download.sub('', src_path)
+            _src_path = STARTS_DOWNLOAD.sub('', src_path)
             return self.download_root.joinpath(_src_path).resolve()
         else:
             return Path(src_path).resolve()
@@ -120,7 +122,7 @@ class Builder:
                 main_logger.error('ImportError importing jsmin: %s', e)
                 raise GrablibError(
                     'Error importing jsmin. Build requirements probably not installed, run `pip install grablib[build]`'
-                )
+                ) from e
             else:
                 self._jsmin = jsmin
         return self._jsmin
@@ -145,6 +147,7 @@ class SassGenerator:
                  include: str=None,
                  exclude: str=None,
                  replace: dict=None,
+                 download_root: Path,
                  debug: bool=False):
         self._in_dir = input_dir
         assert self._in_dir.is_dir()
@@ -158,6 +161,7 @@ class SassGenerator:
         self._include = re.compile(include or '/[^_][^/]+\.(?:css|sass|scss)$')
         self._exclude = exclude and re.compile(exclude)
         self._replace = replace or {}
+        self.download_root = download_root
 
     def __call__(self):
         start = datetime.now()
@@ -206,17 +210,24 @@ class SassGenerator:
         if not css:
             return
 
-        for path_regex, regex_map in self._replace.items():
-            if re.search(path_regex, str(f)):
-                for pattern, repl in regex_map.items():
-                    css = re.sub(pattern, repl, css)
-
         css_path.parent.mkdir(parents=True, exist_ok=True)
         if self._debug:
             css, css_map = css
             # correct the link to map file in css
             css = re.sub(r'/\*# sourceMappingURL=\S+ \*/', '/*# sourceMappingURL={} */'.format(map_path.name), css)
             map_path.write_text(css_map)
+
+        for path_regex, regex_map in self._replace.items():
+            if re.search(path_regex, str(rel_path)):
+                progress_logger.debug('%s has regex replace matches for "%s"', rel_path, path_regex)
+                for pattern, repl in regex_map.items():
+                    hash1 = hash(css)
+                    css = re.sub(pattern, repl, css)
+                    if hash(css) == hash1:
+                        progress_logger.debug('  "%s" ▶ "%s" didn\'t modify the source', pattern, repl)
+                    else:
+                        progress_logger.debug('  "%s" ▶ "%s" modified the source', pattern, repl)
+
         css_path.write_text(css)
         self._files_generated += 1
 
@@ -229,10 +240,20 @@ class SassGenerator:
                 source_map_filename=map_path and str(map_path),
                 output_style=output_style,
                 precision=10,
+                importers=[(0, self._clever_imports)]
             )
         except sass.CompileError as e:
             self._errors += 1
             main_logger.error('"%s", compile error: %s', f, e)
+
+    def _clever_imports(self, src_path):
+        _new_path = None
+        if STARTS_SRC.match(src_path):
+            _new_path = self._in_dir.joinpath(STARTS_SRC.sub('', src_path))
+        elif self.download_root and STARTS_DOWNLOAD.match(src_path):
+            _new_path = self.download_root.joinpath(STARTS_DOWNLOAD.sub('', src_path))
+
+        return _new_path and [(str(_new_path),)]
 
     def get_sass(self):
         try:
@@ -241,5 +262,5 @@ class SassGenerator:
             main_logger.error('ImportError importing sass: %s', e)
             raise GrablibError(
                 'Error importing sass. Build requirements probably not installed, run `pip install grablib[build]`'
-            )
+            ) from e
         return sass

@@ -3,6 +3,12 @@
 History
 -------
 
+0.5.1 (2017-01-17)
+------------------
+* fix ``--debug vs/ --no-debug``
+* fix replace with debug
+* add ``DL/`` and ``SRC/`` clever sass import prefixes
+
 0.5.0 (2017-01-14)
 ------------------
 * git tag check on build
