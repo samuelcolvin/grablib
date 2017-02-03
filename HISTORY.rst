@@ -3,6 +3,10 @@
 History
 -------
 
+0.5.2 (2017-02-03)
+------------------
+* using prettier arrow in logs :-)
+
 0.5.1 (2017-01-17)
 ------------------
 * fix ``--debug vs/ --no-debug``

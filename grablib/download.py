@@ -81,7 +81,7 @@ class Downloader:
             progress_logger.debug('%s already exists unchanged, not downloading', url)
             return
 
-        progress_logger.info('downloading: %s > %s...', url, new_path.relative_to(self.download_root))
+        progress_logger.info('downloading: %s ➤ %s...', url, new_path.relative_to(self.download_root))
         content = self._get_url(url)
         remote_hash = self._data_hash(content)
         if lock_hash and remote_hash != lock_hash:
@@ -143,7 +143,7 @@ class Downloader:
                         targets = [targets]
                     for target in targets:
                         new_path = self._file_path(filepath, target, regex=regex_pattern)
-                        progress_logger.debug('"%s" > "%s" (regex: "%s")',
+                        progress_logger.debug('"%s" ➤ "%s" (regex: "%s")',
                                               filepath, new_path.relative_to(self.download_root), regex_pattern)
                         self._write(new_path, zipf.read(filepath), url)
                         zcopied += 1

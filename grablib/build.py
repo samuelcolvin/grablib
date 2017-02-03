@@ -205,7 +205,7 @@ class SassGenerator:
         if self._debug:
             map_path = css_path.with_suffix('.map')
 
-        progress_logger.info('%s ▶ %s', rel_path, css_path.relative_to(self._out_dir))
+        progress_logger.info('%s ➤ %s', rel_path, css_path.relative_to(self._out_dir))
         css = self.generate_css(f, map_path)
         if not css:
             return
@@ -224,9 +224,9 @@ class SassGenerator:
                     hash1 = hash(css)
                     css = re.sub(pattern, repl, css)
                     if hash(css) == hash1:
-                        progress_logger.debug('  "%s" ▶ "%s" didn\'t modify the source', pattern, repl)
+                        progress_logger.debug('  "%s" ➤ "%s" didn\'t modify the source', pattern, repl)
                     else:
-                        progress_logger.debug('  "%s" ▶ "%s" modified the source', pattern, repl)
+                        progress_logger.debug('  "%s" ➤ "%s" modified the source', pattern, repl)
 
         css_path.write_text(css)
         self._files_generated += 1
