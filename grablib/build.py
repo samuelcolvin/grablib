@@ -250,7 +250,6 @@ class SassGenerator:
 
     def _clever_imports(self, src_path):
         _new_path = None
-        print(src_path, self._nm)
         if STARTS_SRC.match(src_path):
             _new_path = self._in_dir.joinpath(STARTS_SRC.sub('', src_path))
         elif self._nm and STARTS_NODE_M.match(src_path):
