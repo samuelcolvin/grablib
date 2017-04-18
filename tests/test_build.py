@@ -407,3 +407,32 @@ def test_sass_clever_import_debug(tmpworkdir):
         'foo.css': 'a {\n  color: black; }\n\n'
                    '/*# sourceMappingURL=foo.map */'
     } == tree
+
+
+def test_sass_clever_import_node_modules(tmpworkdir):
+    mktree(tmpworkdir, {
+        'grablib.yml': """
+        build_root: built_at
+        debug: true
+        build:
+          sass:
+            css: sass_dir
+        """,
+        'sass_dir': {
+            'foo.scss': "@import 'NM/foobar/bar';",
+        },
+        'node_modules': {
+            'foobar/_bar.scss': 'a {color: black;}'
+        }
+    })
+    Grab().build()
+    tree = gettree(tmpworkdir.join('built_at/css'))
+    tree.pop('foo.map')
+    assert {
+        'foo.css': 'a {\n'
+                   '  color: black; }\n\n'
+                   '/*# sourceMappingURL=foo.map */',
+        '.src': {
+            'foo.scss': "@import 'NM/foobar/bar';"
+        }
+    } == tree

@@ -7,6 +7,7 @@ from typing import Callable
 from .common import GrablibError, main_logger, progress_logger
 
 STARTS_DOWNLOAD = re.compile('^(?:DOWNLOAD|DL)/')
+STARTS_NODE_M = re.compile('^(?:NODE_MODULES|NM)/')
 STARTS_SRC = re.compile('^SRC/')
 
 
@@ -162,6 +163,7 @@ class SassGenerator:
         self._exclude = exclude and re.compile(exclude)
         self._replace = replace or {}
         self.download_root = download_root
+        self._nm = self._find_node_modules()
 
     def __call__(self):
         start = datetime.now()
@@ -248,12 +250,21 @@ class SassGenerator:
 
     def _clever_imports(self, src_path):
         _new_path = None
+        print(src_path, self._nm)
         if STARTS_SRC.match(src_path):
             _new_path = self._in_dir.joinpath(STARTS_SRC.sub('', src_path))
+        elif self._nm and STARTS_NODE_M.match(src_path):
+            _new_path = self._nm.joinpath(STARTS_NODE_M.sub('', src_path))
         elif self.download_root and STARTS_DOWNLOAD.match(src_path):
             _new_path = self.download_root.joinpath(STARTS_DOWNLOAD.sub('', src_path))
 
         return _new_path and [(str(_new_path),)]
+
+    def _find_node_modules(self):
+        for d in self._in_dir.parents:
+            nm = d / 'node_modules'
+            if nm.is_dir():
+                return nm
 
     def get_sass(self):
         try:
