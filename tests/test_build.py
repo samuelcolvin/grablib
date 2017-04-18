@@ -3,6 +3,7 @@ import pytest
 from pytest_toolbox import gettree, mktree
 
 from grablib import Grab
+from grablib.build import fmt_size
 from grablib.common import GrablibError, setup_logging
 
 
@@ -163,6 +164,30 @@ def test_sass(tmpworkdir):
             'foo.css': 'a{color:red}.foo .bar{color:black;width:10px}\n'
         }
     }
+
+
+def test_sass_log_repeat(tmpworkdir, caplog):
+    mktree(tmpworkdir, {
+        'grablib.yml': """
+        build_root: "built_at"
+        build:
+          sass:
+            "css": "sass_dir"
+        """,
+        'sass_dir': {
+            'foo.scss': 'span {color: white}'
+        }
+    })
+    Grab().build()
+    assert gettree(tmpworkdir.join('built_at')) == {'css': {'foo.css': 'span{color:white}\n'}}
+    assert '18B' in caplog
+    assert '%' not in caplog
+    Grab().build()
+    assert '%' not in caplog
+    tmpworkdir.join('sass_dir/foo.scss').write('span {color: white};\ndiv {color: red}')
+    Grab().build()
+    assert '32B' in caplog
+    assert '+78%' in caplog
 
 
 def test_sass_exclude(tmpworkdir):
@@ -436,3 +461,13 @@ def test_sass_clever_import_node_modules(tmpworkdir):
             'foo.scss': "@import 'NM/foobar/bar';"
         }
     } == tree
+
+
+@pytest.mark.parametrize('value,result', [
+    (0, '0B'),
+    (1000, '1000B'),
+    (2000, '2.0KB'),
+    (1.2 * 1024 ** 2, '1.2MB'),
+])
+def test_fmt_size_large(value, result):
+    assert fmt_size(value) == result

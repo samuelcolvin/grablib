@@ -1,8 +1,13 @@
+import hashlib
+import json
 import re
 import shutil
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Callable
+
+import click
 
 from .common import GrablibError, main_logger, progress_logger
 
@@ -151,6 +156,8 @@ class SassGenerator:
                  download_root: Path,
                  debug: bool=False):
         self._in_dir = input_dir
+        dir_hash = hashlib.md5(str(self._in_dir).encode()).hexdigest()
+        self._size_cache_file = Path(tempfile.gettempdir()) / 'grablib_cache.{}.json'.format(dir_hash)
         assert self._in_dir.is_dir()
         self._out_dir = output_dir
         self._debug = debug
@@ -164,6 +171,8 @@ class SassGenerator:
         self._replace = replace or {}
         self.download_root = download_root
         self._nm = self._find_node_modules()
+        self._old_size_cache = {}
+        self._new_size_cache = {}
 
     def __call__(self):
         start = datetime.now()
@@ -176,7 +185,13 @@ class SassGenerator:
                                    'you should delete it with the "wipe" option.'.format(self._out_dir_src))
             shutil.copytree(str(self._in_dir.resolve()), str(self._out_dir_src))
 
+        if self._size_cache_file.exists():
+            with self._size_cache_file.open() as f:
+                self._old_size_cache = json.load(f)
+
         self.process_directory(self._src_dir)
+        with self._size_cache_file.open('w') as f:
+            json.dump(self._new_size_cache, f, indent=2)
         time_taken = (datetime.now() - start).total_seconds() * 1000
         if not self._errors:
             main_logger.info('%d css files generated in %0.0fms, 0 errors', self._files_generated, time_taken)
@@ -207,33 +222,27 @@ class SassGenerator:
         if self._debug:
             map_path = css_path.with_suffix('.map')
 
-        progress_logger.info('%s ➤ %s', rel_path, css_path.relative_to(self._out_dir))
         css = self.generate_css(f, map_path)
-        if not css:
+        if css is None:
             return
-
-        css_path.parent.mkdir(parents=True, exist_ok=True)
-        if self._debug:
-            css, css_map = css
-            # correct the link to map file in css
-            css = re.sub(r'/\*# sourceMappingURL=\S+ \*/', '/*# sourceMappingURL={} */'.format(map_path.name), css)
-            map_path.write_text(css_map)
-
-        for path_regex, regex_map in self._replace.items():
-            if re.search(path_regex, str(rel_path)):
-                progress_logger.debug('%s has regex replace matches for "%s"', rel_path, path_regex)
-                for pattern, repl in regex_map.items():
-                    hash1 = hash(css)
-                    css = re.sub(pattern, repl, css)
-                    if hash(css) == hash1:
-                        progress_logger.debug('  "%s" ➤ "%s" didn\'t modify the source', pattern, repl)
-                    else:
-                        progress_logger.debug('  "%s" ➤ "%s" modified the source', pattern, repl)
+        log_msg = None
+        try:
+            css_path.parent.mkdir(parents=True, exist_ok=True)
+            if self._debug:
+                css, css_map = css
+                # correct the link to map file in css
+                css = re.sub(r'/\*# sourceMappingURL=\S+ \*/', '/*# sourceMappingURL={} */'.format(map_path.name), css)
+                map_path.write_text(css_map)
+            css, log_msg = self._regex_modify(rel_path, css)
+        finally:
+            self._log_file_creation(rel_path, css_path, css)
+            if log_msg:
+                progress_logger.debug(log_msg)
 
         css_path.write_text(css)
         self._files_generated += 1
 
-    def generate_css(self, f: Path, map_path=None):
+    def generate_css(self, f: Path, map_path):
         output_style = 'nested' if self._debug else 'compressed'
         sass = self.get_sass()
         try:
@@ -247,6 +256,37 @@ class SassGenerator:
         except sass.CompileError as e:
             self._errors += 1
             main_logger.error('"%s", compile error: %s', f, e)
+
+    def _regex_modify(self, rel_path, css):
+        log_msg = None
+        for path_regex, regex_map in self._replace.items():
+            if re.search(path_regex, str(rel_path)):
+                progress_logger.debug('%s has regex replace matches for "%s"', rel_path, path_regex)
+                for pattern, repl in regex_map.items():
+                    hash1 = hash(css)
+                    css = re.sub(pattern, repl, css)
+                    if hash(css) == hash1:
+                        log_msg = '  "{}" ➤ "{}" didn\'t modify the source'.format(pattern, repl)
+                    else:
+                        log_msg = '  "{}" ➤ "{}" modified the source'.format(pattern, repl)
+        return css, log_msg
+
+    def _log_file_creation(self, rel_path, css_path, css):
+        src, dst = str(rel_path), str(css_path.relative_to(self._out_dir))
+
+        size = len(css)
+        p = str(css_path)
+        self._new_size_cache[p] = size
+        old_size = self._old_size_cache.get(p)
+        c = None
+        if old_size:
+            change_p = (size - old_size) / old_size * 100
+            if abs(change_p) > 0.5:
+                c = 'green' if change_p <= 0 else 'red'
+                change_p = click.style('{:+0.0f}%'.format(change_p), fg=c)
+                progress_logger.info('%30s ➤ %-30s %7s %s', src, dst, fmt_size(size), change_p)
+        if c is None:
+            progress_logger.info('%30s ➤ %-30s %7s', src, dst, fmt_size(size))
 
     def _clever_imports(self, src_path):
         _new_path = None
@@ -274,3 +314,15 @@ class SassGenerator:
                 'Error importing sass. Build requirements probably not installed, run `pip install grablib[build]`'
             ) from e
         return sass
+
+
+KB, MB = 1024, 1024 ** 2
+
+
+def fmt_size(num):
+    if num <= KB:
+        return '{:0.0f}B'.format(num)
+    elif num <= MB:
+        return '{:0.1f}KB'.format(num / KB)
+    else:
+        return '{:0.1f}MB'.format(num / MB)

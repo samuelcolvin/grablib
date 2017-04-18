@@ -6,6 +6,7 @@ History
 0.6.0 (2017-04-18)
 ------------------
 * allow node module resolution of sass imports via ``NM/``
+* add size display to sass generation
 
 0.5.2 (2017-02-03)
 ------------------
