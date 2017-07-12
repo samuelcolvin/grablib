@@ -3,6 +3,11 @@
 History
 -------
 
+0.6.1 (2017-07-12)
+------------------
+* uprev
+* propagate false on logs
+
 0.6.0 (2017-04-18)
 ------------------
 * allow node module resolution of sass imports via ``NM/``

@@ -64,10 +64,12 @@ def log_config(log_level: Union[str, int]) -> dict:
             main_logger.name: {
                 'handlers': ['default'],
                 'level': log_level,
+                'propagate': False,
             },
             progress_logger.name: {
                 'handlers': ['progress'],
                 'level': log_level,
+                'propagate': False,
             },
         },
     }
