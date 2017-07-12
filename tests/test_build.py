@@ -1,11 +1,11 @@
 import builtins
+
 import pytest
 from pytest_toolbox import gettree, mktree
 
 from grablib import Grab
 from grablib.build import fmt_size
 from grablib.common import GrablibError, setup_logging
-
 
 real_import = builtins.__import__
 

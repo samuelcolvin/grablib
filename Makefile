@@ -1,3 +1,5 @@
+.DEFAULT_GOAL := all
+
 .PHONY: install
 install:
 	pip install -U pip
@@ -23,3 +25,5 @@ test:
 testcov:
 	py.test --cov=grablib && (echo "building coverage html"; coverage html)
 
+.PHONY: all
+all: testcov lint
