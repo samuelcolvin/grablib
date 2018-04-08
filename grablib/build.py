@@ -5,7 +5,7 @@ import shutil
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Union
 
 import click
 
@@ -14,6 +14,7 @@ from .common import GrablibError, main_logger, progress_logger
 STARTS_DOWNLOAD = re.compile('^(?:DOWNLOAD|DL)/')
 STARTS_NODE_M = re.compile('^(?:NODE_MODULES|NM)/')
 STARTS_SRC = re.compile('^SRC/')
+StrPath = Union[str, Path]
 
 
 class Builder:
@@ -21,7 +22,7 @@ class Builder:
     main class for "building" assets eg. concatenating and minifying js and compiling sass
     """
 
-    def __init__(self, *, build_root, build, download_root: str=None, debug=False, **data):
+    def __init__(self, *, build_root: StrPath, build: dict, download_root: StrPath=None, debug=False, **data):
         self.build_root = Path(build_root).absolute()
         self.build = build
         self.download_root = download_root and Path(download_root).resolve()
@@ -62,7 +63,6 @@ class Builder:
                 main_logger.warning('no files found to form "%s"', dest)
                 continue
             dest_path = self._dest_path(dest)
-            dest_path.relative_to(self.build_root)
             self._write(dest_path, final_content)
             total_files_combined += files_combined
             progress_logger.info('%d files combined to form "%s"', files_combined, dest)

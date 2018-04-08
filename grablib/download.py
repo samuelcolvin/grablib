@@ -5,6 +5,7 @@ import zipfile
 from collections import OrderedDict
 from io import BytesIO as IO
 from pathlib import Path
+from typing import Union
 
 import requests
 from requests.exceptions import RequestException
@@ -18,6 +19,7 @@ ALIASES = {
 ZIP_VALUE_REF = ':zip-lookup'
 ZIP_RAW_REF = ':zip-raw'
 STALE = ':stale'
+StrPath = Union[str, Path]
 
 
 class Downloader:
@@ -26,10 +28,10 @@ class Downloader:
     """
 
     def __init__(self, *,
-                 download_root: str,
+                 download_root: StrPath,
                  download: dict,
                  aliases: dict=None,
-                 lock: str='.grablib.lock',
+                 lock: StrPath='.grablib.lock',
                  **data):
         """
         :param download_root: path to download file to
