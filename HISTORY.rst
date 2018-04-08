@@ -3,7 +3,12 @@
 History
 -------
 
-0.7.9 (2018-04-08)
+0.7.1 (2018-04-08)
+------------------
+* tweak hash insertion
+* correct deploy tag name
+
+0.7.0 (2018-04-08)
 ------------------
 * uprev
 * tweak type annotations

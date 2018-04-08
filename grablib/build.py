@@ -17,11 +17,11 @@ STARTS_SRC = re.compile('^SRC/')
 StrPath = Union[str, Path]
 
 
-def insert_hash(path: Path, content: Union[str, bytes], *, hash_length=20, hash_algorithm=hashlib.md5):
+def insert_hash(path: Path, content: Union[str, bytes], *, hash_length=7, hash_algorithm=hashlib.md5):
     """
     Insert a hash based on the content into the path after the first dot.
 
-    hash_length 20 matches webpacks default https://webpack.js.org/configuration/output/#output-hashdigestlength
+    hash_length 7 matches git commit short references
     """
     if isinstance(content, str):
         content = content.encode()

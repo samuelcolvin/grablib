@@ -516,7 +516,7 @@ def test_raw_sass_prod_hash(tmpdir):
     )
     sass_gen()
     assert gettree(tmpdir.join('output')) == {
-        'foo.4f14eadf2e2a8464906c.css': '.foo{color:#G00D}\n'
+        'foo.4f14ead.css': '.foo{color:#G00D}\n'
     }
 
 
@@ -578,13 +578,13 @@ def test_raw_sass_dev_hash(tmpdir):
     )
     sass_gen()
     assert gettree(tmpdir.join('output')) == {
-        'foo.784130f10dab97a4279b.css': (
+        'foo.784130f.css': (
             '.foo {\n'
             '  color: #G00D; }\n'
             '\n'
-            '/*# sourceMappingURL=foo.784130f10dab97a4279b.css.map */'
+            '/*# sourceMappingURL=foo.784130f.css.map */'
         ),
-        'foo.784130f10dab97a4279b.css.map': RegexStr('{.*'),
+        'foo.784130f.css.map': RegexStr('{.*'),
         '.src': {
             'foo.scss': (
                 "@import 'adir/mixin';\n"
@@ -610,5 +610,5 @@ def test_hash_bytes():
 
 
 def test_other_algorithm():
-    assert insert_hash(Path('foo.css'), 'x') == Path('foo.9dd4e461268c8034f5c8.css')
-    assert insert_hash(Path('foo.css'), 'x', hash_algorithm=hashlib.sha1) == Path('foo.11f6ad8ec52a2984abaa.css')
+    assert insert_hash(Path('foo.css'), 'x') == Path('foo.9dd4e46.css')
+    assert insert_hash(Path('foo.css'), 'x', hash_algorithm=hashlib.sha1) == Path('foo.11f6ad8.css')
