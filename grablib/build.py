@@ -17,6 +17,14 @@ STARTS_SRC = re.compile('^SRC/')
 StrPath = Union[str, Path]
 
 
+def insert_hash(path: Path, content: Union[str, bytes]):
+    if isinstance(content, str):
+        content = content.encode()
+    # 20 matches webpacks default https://webpack.js.org/configuration/output/#output-hashdigestlength
+    hash_ = hashlib.md5(content).hexdigest()[:20]
+    return path.with_name(re.sub(r'\.', '.{}.'.format(hash_), path.name, count=1))
+
+
 class Builder:
     """
     main class for "building" assets eg. concatenating and minifying js and compiling sass
@@ -154,13 +162,15 @@ class SassGenerator:
                  exclude: str=None,
                  replace: dict=None,
                  download_root: Path,
-                 debug: bool=False):
+                 debug: bool=False,
+                 apply_hash: bool=False):
         self._in_dir = input_dir
         dir_hash = hashlib.md5(str(self._in_dir).encode()).hexdigest()
         self._size_cache_file = Path(tempfile.gettempdir()) / 'grablib_cache.{}.json'.format(dir_hash)
         assert self._in_dir.is_dir()
         self._out_dir = output_dir
         self._debug = debug
+        self._apply_hash = apply_hash
         if self._debug:
             self._out_dir_src = self._out_dir / '.src'
             self._src_dir = self._out_dir_src
@@ -218,18 +228,23 @@ class SassGenerator:
         rel_path = f.relative_to(self._src_dir)
         css_path = (self._out_dir / rel_path).with_suffix('.css')
 
-        map_path = None
-        if self._debug:
-            map_path = css_path.with_suffix('.map')
+        map_path = css_path.with_name(css_path.name + '.map') if self._debug else None
 
         css = self.generate_css(f, map_path)
         if css is None:
             return
         log_msg = None
+        apply_hash = self._apply_hash
         try:
             css_path.parent.mkdir(parents=True, exist_ok=True)
             if self._debug:
                 css, css_map = css
+
+                if apply_hash:
+                    css_path = insert_hash(css_path, css)
+                    map_path = insert_hash(map_path, css)
+                    apply_hash = False
+
                 # correct the link to map file in css
                 css = re.sub(r'/\*# sourceMappingURL=\S+ \*/', '/*# sourceMappingURL={} */'.format(map_path.name), css)
                 map_path.write_text(css_map)
@@ -239,6 +254,8 @@ class SassGenerator:
             if log_msg:
                 progress_logger.debug(log_msg)
 
+        if apply_hash:
+            css_path = insert_hash(css_path, css)
         css_path.write_text(css)
         self._files_generated += 1
 

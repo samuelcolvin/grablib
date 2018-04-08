@@ -3,6 +3,12 @@
 History
 -------
 
+0.7.9 (2018-04-08)
+------------------
+* uprev
+* tweak type annotations
+* add hash insertion in output names to sass generation
+
 0.6.1 (2017-07-12)
 ------------------
 * uprev

@@ -1,10 +1,12 @@
 import builtins
+from pathlib import Path
 
 import pytest
 from pytest_toolbox import gettree, mktree
+from pytest_toolbox.comparison import RegexStr
 
 from grablib import Grab
-from grablib.build import fmt_size
+from grablib.build import SassGenerator, fmt_size
 from grablib.common import GrablibError, setup_logging
 
 real_import = builtins.__import__
@@ -166,7 +168,7 @@ def test_sass(tmpworkdir):
     }
 
 
-def test_sass_log_repeat(tmpworkdir, caplog):
+def test_sass_log_repeat(tmpworkdir, smart_caplog):
     mktree(tmpworkdir, {
         'grablib.yml': """
         build_root: "built_at"
@@ -180,14 +182,14 @@ def test_sass_log_repeat(tmpworkdir, caplog):
     })
     Grab().build()
     assert gettree(tmpworkdir.join('built_at')) == {'css': {'foo.css': 'span{color:white}\n'}}
-    assert '18B' in caplog
-    assert '%' not in caplog
+    assert '18B' in smart_caplog
+    assert '%' not in smart_caplog
     Grab().build()
-    assert '%' not in caplog
+    assert '%' not in smart_caplog
     tmpworkdir.join('sass_dir/foo.scss').write('span {color: white};\ndiv {color: red}')
     Grab().build()
-    assert '32B' in caplog
-    assert '+78%' in caplog
+    assert '32B' in smart_caplog
+    assert '+78%' in smart_caplog
 
 
 def test_sass_exclude(tmpworkdir):
@@ -228,14 +230,13 @@ def test_sass_debug(tmpworkdir):
     })
     Grab().build()
     tree = gettree(tmpworkdir.join('built_at/css'))
-    foo_map = tree.pop('foo.map')
     assert {
-        'foo.css': '.foo .bar {\n  color: black; }\n\n/*# sourceMappingURL=foo.map */',
+        'foo.css': '.foo .bar {\n  color: black; }\n\n/*# sourceMappingURL=foo.css.map */',
+        'foo.css.map': RegexStr('{\n\t"version": 3,\n\t"file": "\.src/foo.css".*'),
         '.src': {
             'foo.scss': '.foo { .bar {color: black;}}'
         }
     } == tree
-    assert foo_map.startswith('{\n\t"version": 3,\n\t"file": ".src/foo.css"')
 
 
 def test_sass_debug_src_exists(tmpworkdir):
@@ -423,14 +424,14 @@ def test_sass_clever_import_debug(tmpworkdir):
     })
     Grab().build()
     tree = gettree(tmpworkdir.join('built_at/css'))
-    tree.pop('foo.map')
     assert {
         '.src': {
             'foo.scss': "@import 'SRC/bar';",
             '_bar.scss': 'a {color: black;}'
         },
+        'foo.css.map': RegexStr('{.*'),
         'foo.css': 'a {\n  color: black; }\n\n'
-                   '/*# sourceMappingURL=foo.map */'
+                   '/*# sourceMappingURL=foo.css.map */'
     } == tree
 
 
@@ -452,11 +453,11 @@ def test_sass_clever_import_node_modules(tmpworkdir):
     })
     Grab().build()
     tree = gettree(tmpworkdir.join('built_at/css'))
-    tree.pop('foo.map')
     assert {
         'foo.css': 'a {\n'
                    '  color: black; }\n\n'
-                   '/*# sourceMappingURL=foo.map */',
+                   '/*# sourceMappingURL=foo.css.map */',
+        'foo.css.map': RegexStr('{.*'),
         '.src': {
             'foo.scss': "@import 'NM/foobar/bar';"
         }
@@ -471,3 +472,125 @@ def test_sass_clever_import_node_modules(tmpworkdir):
 ])
 def test_fmt_size_large(value, result):
     assert fmt_size(value) == result
+
+
+def test_raw_sass_prod(tmpdir):
+    mktree(tmpdir, {
+        'sass': {
+            'adir/_mixin.scss': '$my_colour: #G00D;',
+            'foo.scss': (
+                "@import 'adir/mixin';\n"
+                ".foo {color: $my_colour}"
+            )
+        },
+        'downloads': {}
+    })
+    sass_gen = SassGenerator(
+        input_dir=Path(tmpdir.join('sass')),
+        output_dir=Path(tmpdir.join('output')),
+        download_root=Path(tmpdir.join('downloads')),
+    )
+    sass_gen()
+    assert gettree(tmpdir.join('output')) == {
+        'foo.css': '.foo{color:#G00D}\n'
+    }
+
+
+def test_raw_sass_prod_hash(tmpdir):
+    mktree(tmpdir, {
+        'sass': {
+            'adir/_mixin.scss': '$my_colour: #G00D;',
+            'foo.scss': (
+                "@import 'adir/mixin';\n"
+                ".foo {color: $my_colour}"
+            )
+        },
+        'downloads': {}
+    })
+    sass_gen = SassGenerator(
+        input_dir=Path(tmpdir.join('sass')),
+        output_dir=Path(tmpdir.join('output')),
+        download_root=Path(tmpdir.join('downloads')),
+        apply_hash=True
+    )
+    sass_gen()
+    assert gettree(tmpdir.join('output')) == {
+        'foo.4f14eadf2e2a8464906c.css': '.foo{color:#G00D}\n'
+    }
+
+
+def test_raw_sass_dev(tmpdir):
+    mktree(tmpdir, {
+        'sass': {
+            'adir/_mixin.scss': '$my_colour: #G00D;',
+            'foo.scss': (
+                "@import 'adir/mixin';\n"
+                ".foo {color: $my_colour}"
+            )
+        },
+        'downloads': {}
+    })
+    sass_gen = SassGenerator(
+        input_dir=Path(tmpdir.join('sass')),
+        output_dir=Path(tmpdir.join('output')),
+        download_root=Path(tmpdir.join('downloads')),
+        debug=True
+    )
+    sass_gen()
+    assert gettree(tmpdir.join('output')) == {
+        '.src': {
+            'foo.scss': (
+                "@import 'adir/mixin';\n"
+                '.foo {color: $my_colour}'
+            ),
+            'adir': {
+                '_mixin.scss': '$my_colour: #G00D;',
+            },
+        },
+        'foo.css.map': RegexStr('{.*'),
+        'foo.css': (
+            '.foo {\n'
+            '  color: #G00D; }\n'
+            '\n'
+            '/*# sourceMappingURL=foo.css.map */'
+        ),
+    }
+
+
+def test_raw_sass_dev_hash(tmpdir):
+    mktree(tmpdir, {
+        'sass': {
+            'adir/_mixin.scss': '$my_colour: #G00D;',
+            'foo.scss': (
+                "@import 'adir/mixin';\n"
+                ".foo {color: $my_colour}"
+            )
+        },
+        'downloads': {}
+    })
+    sass_gen = SassGenerator(
+        input_dir=Path(tmpdir.join('sass')),
+        output_dir=Path(tmpdir.join('output')),
+        download_root=Path(tmpdir.join('downloads')),
+        debug=True,
+        apply_hash=True,
+    )
+    sass_gen()
+    assert gettree(tmpdir.join('output')) == {
+        'foo.784130f10dab97a4279b.css': (
+            '.foo {\n'
+            '  color: #G00D; }\n'
+            '\n'
+            '/*# sourceMappingURL=foo.784130f10dab97a4279b.css.map */'
+        ),
+        'foo.784130f10dab97a4279b.css.map': RegexStr('{.*'),
+        '.src': {
+            'foo.scss': (
+                "@import 'adir/mixin';\n"
+                '.foo {color: $my_colour}'
+            ),
+            'adir': {
+                '_mixin.scss': '$my_colour: #G00D;',
+            },
+        },
+    }
