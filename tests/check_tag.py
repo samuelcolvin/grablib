@@ -6,10 +6,8 @@ from grablib.version import VERSION
 
 git_tag = os.getenv('TRAVIS_TAG')
 if git_tag:
-    if git_tag != str(VERSION):
-        print('✖ "TRAVIS_TAG" environment variable does not match grablib.version: "%s" vs. "%s"' % (git_tag, VERSION))
+    if git_tag.lower().lstrip('v') != str(VERSION).lower():
+        print('✖ "TRAVIS_TAG" environment variable does not match package version: "%s" vs. "%s"' % (git_tag, VERSION))
         sys.exit(1)
     else:
-        print('✓ "TRAVIS_TAG" environment variable matches grablib.version: "{}"'.format(VERSION))
-else:
-    print('✓ "TRAVIS_TAG" not defined')
+        print('✓ "TRAVIS_TAG" environment variable matches package version: "%s" vs. "%s"' % (git_tag, VERSION))
