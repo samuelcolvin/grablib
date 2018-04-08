@@ -17,12 +17,20 @@ STARTS_SRC = re.compile('^SRC/')
 StrPath = Union[str, Path]
 
 
-def insert_hash(path: Path, content: Union[str, bytes]):
+def insert_hash(path: Path, content: Union[str, bytes], *, hash_length=20, hash_algorithm=hashlib.md5):
+    """
+    Insert a hash based on the content into the path after the first dot.
+
+    hash_length 20 matches webpacks default https://webpack.js.org/configuration/output/#output-hashdigestlength
+    """
     if isinstance(content, str):
         content = content.encode()
-    # 20 matches webpacks default https://webpack.js.org/configuration/output/#output-hashdigestlength
-    hash_ = hashlib.md5(content).hexdigest()[:20]
-    return path.with_name(re.sub(r'\.', '.{}.'.format(hash_), path.name, count=1))
+    hash_ = hash_algorithm(content).hexdigest()[:hash_length]
+    if '.' in path.name:
+        new_name = re.sub(r'\.', f'.{hash_}.', path.name, count=1)
+    else:
+        new_name = f'{path.name}.{hash_}'
+    return path.with_name(new_name)
 
 
 class Builder:

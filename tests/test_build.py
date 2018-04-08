@@ -1,4 +1,5 @@
 import builtins
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -6,7 +7,7 @@ from pytest_toolbox import gettree, mktree
 from pytest_toolbox.comparison import RegexStr
 
 from grablib import Grab
-from grablib.build import SassGenerator, fmt_size
+from grablib.build import SassGenerator, fmt_size, insert_hash
 from grablib.common import GrablibError, setup_logging
 
 real_import = builtins.__import__
@@ -594,3 +595,20 @@ def test_raw_sass_dev_hash(tmpdir):
             },
         },
     }
+
+
+def test_hash_bytes_multiple_dots():
+    assert insert_hash(Path('foo/bar.map.css'), 'whatever', hash_length=10) == Path('foo/bar.008c5926ca.map.css')
+
+
+def test_hash_bytes_no_dots():
+    assert insert_hash(Path('foo/bar'), 'whatever', hash_length=10) == Path('foo/bar.008c5926ca')
+
+
+def test_hash_bytes():
+    assert insert_hash(Path('foo/bar.css'), 'hello') == insert_hash(Path('foo/bar.css'), b'hello')
+
+
+def test_other_algorithm():
+    assert insert_hash(Path('foo.css'), 'x') == Path('foo.9dd4e461268c8034f5c8.css')
+    assert insert_hash(Path('foo.css'), 'x', hash_algorithm=hashlib.sha1) == Path('foo.11f6ad8ec52a2984abaa.css')
