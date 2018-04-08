@@ -19,7 +19,7 @@ Definition files can either be JSON or YAML (see `examples`_).
 Installation
 ------------
 
-grablib requires **python 3.5+**.
+grablib requires **python 3.6+**.
 
 .. code::
 

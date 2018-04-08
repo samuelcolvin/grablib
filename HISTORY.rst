@@ -8,6 +8,7 @@ History
 * uprev
 * tweak type annotations
 * add hash insertion in output names to sass generation
+* drop support for python 3.5
 
 0.6.1 (2017-07-12)
 ------------------
