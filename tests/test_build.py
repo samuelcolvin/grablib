@@ -597,6 +597,36 @@ def test_raw_sass_dev_hash(tmpdir):
     }
 
 
+def test_sass_custom_functions(tmpdir):
+    mktree(tmpdir, {
+        'sass': {
+            'foo.scss': (
+                ""
+                ".foo {color: waffle(100px, 'foobar.png')}"
+            )
+        },
+        'downloads': {}
+    })
+    args = None
+
+    def waffle(a, b):
+        nonlocal args
+        args = f'{a.value:0.0f}{a.unit}', b
+        return '#G00D'
+
+    sass_gen = SassGenerator(
+        input_dir=Path(tmpdir.join('sass')),
+        output_dir=Path(tmpdir.join('output')),
+        download_root=Path(tmpdir.join('downloads')),
+        custom_functions={waffle},
+    )
+    sass_gen()
+    assert gettree(tmpdir.join('output')) == {
+        'foo.css': '.foo{color:#G00D}\n'
+    }
+    assert args == ('100px', 'foobar.png')
+
+
 def test_hash_bytes_multiple_dots():
     assert insert_hash(Path('foo/bar.map.css'), 'whatever', hash_length=10) == Path('foo/bar.008c5926ca.map.css')
 

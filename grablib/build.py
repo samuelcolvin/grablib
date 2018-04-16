@@ -171,6 +171,7 @@ class SassGenerator:
                  replace: dict=None,
                  download_root: Path,
                  debug: bool=False,
+                 custom_functions: Union[dict, set, list]=(),
                  apply_hash: bool=False):
         self._in_dir = input_dir
         dir_hash = hashlib.md5(str(self._in_dir).encode()).hexdigest()
@@ -179,6 +180,7 @@ class SassGenerator:
         self._out_dir = output_dir
         self._debug = debug
         self._apply_hash = apply_hash
+        self._custom_functions = custom_functions
         if self._debug:
             self._out_dir_src = self._out_dir / '.src'
             self._src_dir = self._out_dir_src
@@ -276,7 +278,8 @@ class SassGenerator:
                 source_map_filename=map_path and str(map_path),
                 output_style=output_style,
                 precision=10,
-                importers=[(0, self._clever_imports)]
+                importers=[(0, self._clever_imports)],
+                custom_functions=self._custom_functions,
             )
         except sass.CompileError as e:
             self._errors += 1
