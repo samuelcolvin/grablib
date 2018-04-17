@@ -3,6 +3,10 @@
 History
 -------
 
+0.7.3 (2018-04-17)
+------------------
+* allow custom importers for sass generation
+
 0.7.2 (2018-04-16)
 ------------------
 * allow custom function mapping for sass generation

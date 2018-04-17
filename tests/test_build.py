@@ -601,7 +601,6 @@ def test_sass_custom_functions(tmpdir):
     mktree(tmpdir, {
         'sass': {
             'foo.scss': (
-                ""
                 ".foo {color: waffle(100px, 'foobar.png')}"
             )
         },
@@ -625,6 +624,32 @@ def test_sass_custom_functions(tmpdir):
         'foo.css': '.foo{color:#G00D}\n'
     }
     assert args == ('100px', 'foobar.png')
+
+
+def test_sass_custom_importer(tmpdir):
+    mktree(tmpdir, {
+        'sass': {
+            'foo.scss': (
+                '@import "FOOBAR/hello"'
+            )
+        },
+        'downloads': {}
+    })
+
+    def extra_importer(path):
+        if path.startswith('FOOBAR'):
+            return [('path/to/content.css', 'div {color: red}')]
+
+    sass_gen = SassGenerator(
+        input_dir=Path(tmpdir.join('sass')),
+        output_dir=Path(tmpdir.join('output')),
+        download_root=Path(tmpdir.join('downloads')),
+        extra_importers=[(1, extra_importer)],
+    )
+    sass_gen()
+    assert gettree(tmpdir.join('output')) == {
+        'foo.css': 'div{color:red}\n'
+    }
 
 
 def test_hash_bytes_multiple_dots():
