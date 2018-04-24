@@ -3,6 +3,10 @@
 History
 -------
 
+0.7.4 (2018-04-24)
+------------------
+* support and require libsass>=0.14.4 #56
+
 0.7.3 (2018-04-17)
 ------------------
 * allow custom importers for sass generation
