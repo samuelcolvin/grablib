@@ -45,7 +45,7 @@ setup(
     extras_require={
         'build': [
             'jsmin>=2.2.1',
-            'libsass>=0.12',
+            'libsass>=0.14.4',
         ],
     }
 )
