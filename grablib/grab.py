@@ -1,16 +1,15 @@
-import collections
 import json
 import re
 from pathlib import Path
 
-import yaml
-from yaml.scanner import MarkedYAMLError
+from ruamel.yaml import YAML, YAMLError
 
 from .build import Builder
 from .common import GrablibError, main_logger
 from .download import Downloader
 
 STD_FILE_NAMES = [re.compile('grablib\.ya?ml'), re.compile('grablib\.json')]
+yaml = YAML(typ='safe')
 
 
 class Grab:
@@ -30,7 +29,7 @@ class Grab:
         with config_path.open() as f:
             try:
                 self.config_data = loader(f)
-            except (MarkedYAMLError, ValueError) as e:
+            except (YAMLError, ValueError) as e:
                 main_logger.error('%s: %s', e.__class__.__name__, e)
                 raise GrablibError('error loading "{}"'.format(config_file))
         if download_root:
@@ -56,10 +55,10 @@ class Grab:
     def yaml_or_json(cls, file_path:  Path):
         if file_path.name.endswith(('.yml', '.yaml')):
             main_logger.debug('Processing %s as a yaml file', file_path)
-            return cls.yaml_load
+            return yaml.load
         elif file_path.name.endswith('.json'):
             main_logger.debug('Processing %s as a json file', file_path)
-            return cls.json_load
+            return json.load
         else:
             raise GrablibError('Unexpected extension for "{}", should be json or yml/yaml'.format(file_path.name))
 
@@ -74,20 +73,3 @@ class Grab:
                 pass
         raise GrablibError('Unable to find config file with standard name "grablib.yml" or "grablib.json" in the '
                            'current working directory')
-
-    @staticmethod
-    def yaml_load(f):
-        class OrderedLoader(yaml.Loader):
-            pass
-
-        def construct_mapping(loader, node):
-            loader.flatten_mapping(node)
-            return collections.OrderedDict(loader.construct_pairs(node))
-        OrderedLoader.add_constructor(
-            yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-            construct_mapping)
-        return yaml.load(f, OrderedLoader)
-
-    @staticmethod
-    def json_load(f):
-        return json.load(f, object_pairs_hook=collections.OrderedDict)

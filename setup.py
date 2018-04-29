@@ -39,7 +39,7 @@ setup(
     """,
     install_requires=[
         'click>=6.6',
-        'PyYAML>=3.12',
+        'ruamel.yaml>=0.15.37',
         'requests>=2.12',
     ],
     extras_require={

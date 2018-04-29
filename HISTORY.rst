@@ -3,6 +3,10 @@
 History
 -------
 
+0.7.5 (2018-04-XX)
+------------------
+* switch to much better yaml parser ``ruamel.yaml``
+
 0.7.4 (2018-04-24)
 ------------------
 * support and require libsass>=0.14.4 #56
