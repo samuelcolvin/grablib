@@ -31,7 +31,8 @@ jobs:
       run: |
         make install
         pip freeze
-        grablib -V
+
+    - run: grablib -V
 
     - name: lint
       run: make lint
