@@ -22,11 +22,13 @@ lint:
 
 .PHONY: test
 test:
-	py.test --cov=grablib
+	pytest --cov=grablib
 
 .PHONY: testcov
 testcov:
-	py.test --cov=grablib && (echo "building coverage html"; coverage html)
+	pytest --cov=grablib
+	@echo "building coverage html"
+	@coverage html
 
 .PHONY: all
-all: testcov lint
+all: lint testcov

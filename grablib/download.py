@@ -2,7 +2,6 @@ import hashlib
 import json
 import re
 import zipfile
-from collections import OrderedDict
 from io import BytesIO as IO
 from pathlib import Path
 from typing import Union
@@ -63,8 +62,6 @@ class Downloader:
                     self._process_normal_file(url, value)
             except GrablibError as e:
                 # create new exception to show which file download went wrong for
-                if isinstance(value, OrderedDict):
-                    value = dict(value)
                 raise GrablibError('Error downloading "{}" to "{}"'.format(url, value)) from e
         self._delete_stale()
         self._save_lock()
