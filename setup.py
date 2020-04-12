@@ -3,14 +3,18 @@ from pathlib import Path
 from setuptools import setup
 
 description = 'Utility for defining then downloading and preprocessing external static files.'
-long_description = Path(__file__).resolve().parent.joinpath('README.rst').read_text()
+THIS_DIR = Path(__file__).resolve().parent
+try:
+    long_description = (THIS_DIR / 'README.rst').read_text()
+except FileNotFoundError:
+    long_description = description + '.\n\nSee https://github.com/samuelcolvin/grablib for documentation.'
 
 # importing just this file avoids importing the full package with external dependencies which might not be installed
 version = SourceFileLoader('version', 'grablib/version.py').load_module()
 
 setup(
     name='grablib',
-    version=str(version.VERSION),
+    version=version.VERSION,
     description=description,
     long_description=long_description,
     classifiers=[
@@ -21,6 +25,7 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: Implementation :: CPython',
     ],
     keywords='css,sass,scss,build,static,download',
@@ -40,7 +45,7 @@ setup(
     install_requires=[
         'click>=6.6',
         'ruamel.yaml>=0.15.37',
-        'requests>=2.12',
+        'requests>=2.20',
     ],
     extras_require={
         'build': [

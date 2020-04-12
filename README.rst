@@ -3,7 +3,7 @@ grablib
 
 |Build Status| |codecov.io| |PyPI Status| |license|
 
-Copyright (C) 2013-2017 Samuel Colvin
+Copyright (C) 2013-2020 Samuel Colvin
 
 Kind of like bower, but in Python, and simpler, and with some more features.
 
