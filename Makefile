@@ -1,4 +1,6 @@
 .DEFAULT_GOAL := all
+isort = isort -rc grablib tests
+black = black -S -l 120 --target-version py37 grablib tests
 
 .PHONY: install
 install:
@@ -6,16 +8,17 @@ install:
 	pip install .[build]
 	pip install -r tests/requirements.txt
 
-.PHONY: isort
-isort:
-	isort -rc -w 120 grablib
-	isort -rc -w 120 tests
+.PHONY: format
+format:
+	$(isort)
+	$(black)
 
 .PHONY: lint
 lint:
 	python setup.py check -rms
 	flake8 grablib/ tests/
-	pytest grablib -p no:sugar -q --cache-clear
+	$(isort) --check-only -df
+	$(black) --check
 
 .PHONY: test
 test:

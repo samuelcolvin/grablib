@@ -44,33 +44,14 @@ def log_config(log_level: Union[str, int]) -> dict:
     return {
         'version': 1,
         'disable_existing_loggers': True,
-        'formatters': {
-            'default': {'format': '%(message)s'},
-            'indent': {'format': '    %(message)s'},
-        },
+        'formatters': {'default': {'format': '%(message)s'}, 'indent': {'format': '    %(message)s'}},
         'handlers': {
-            'default': {
-                'level': log_level,
-                'class': 'grablib.common.ClickHandler',
-                'formatter': 'default'
-            },
-            'progress': {
-                'level': log_level,
-                'class': 'grablib.common.ProgressHandler',
-                'formatter': 'indent'
-            },
+            'default': {'level': log_level, 'class': 'grablib.common.ClickHandler', 'formatter': 'default'},
+            'progress': {'level': log_level, 'class': 'grablib.common.ProgressHandler', 'formatter': 'indent'},
         },
         'loggers': {
-            main_logger.name: {
-                'handlers': ['default'],
-                'level': log_level,
-                'propagate': False,
-            },
-            progress_logger.name: {
-                'handlers': ['progress'],
-                'level': log_level,
-                'propagate': False,
-            },
+            main_logger.name: {'handlers': ['default'], 'level': log_level, 'propagate': False},
+            progress_logger.name: {'handlers': ['progress'], 'level': log_level, 'propagate': False},
         },
     }
 
@@ -84,4 +65,5 @@ class GrablibError(RuntimeError):
     """
     Exception used when the error is clear so no traceback is required.
     """
+
     pass

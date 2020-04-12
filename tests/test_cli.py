@@ -18,26 +18,28 @@ def test_simple_wrong_path():
 
 
 def test_invalid_json(tmpworkdir):
-    mktree(tmpworkdir, {
-        'grablib.json': 'WRONG'
-    })
+    mktree(tmpworkdir, {'grablib.json': 'WRONG'})
     result = CliRunner().invoke(cli, ['download', '-f', 'grablib.json'])
     assert result.exit_code == 2
-    assert result.output == ('JSONDecodeError: Expecting value: line 1 column 1 (char 0)\n'
-                             'Error: error loading "grablib.json"\n')
+    assert result.output == (
+        'JSONDecodeError: Expecting value: line 1 column 1 (char 0)\nError: error loading "grablib.json"\n'
+    )
 
 
 def test_just_build(tmpworkdir):
-    mktree(tmpworkdir, {
-        'grablib.yml': """
+    mktree(
+        tmpworkdir,
+        {
+            'grablib.yml': """
         build_root: "built_at"
         build:
           cat:
             "libraries.js":
               - "./foo.js"
         """,
-        'foo.js': 'var v = "foo js";',
-    })
+            'foo.js': 'var v = "foo js";',
+        },
+    )
     result = CliRunner().invoke(cli, ['download'])
     assert result.exit_code == 0
     assert tmpworkdir.join('built_at').check() is False
@@ -47,16 +49,19 @@ def test_just_build(tmpworkdir):
 
 
 def test_build_verbosity(tmpworkdir):
-    mktree(tmpworkdir, {
-        'grablib.yml': """
+    mktree(
+        tmpworkdir,
+        {
+            'grablib.yml': """
         build_root: "built_at"
         build:
           cat:
             "libraries.js":
               - "./foo.js"
         """,
-        'foo.js': 'var v = "foo js";',
-    })
+            'foo.js': 'var v = "foo js";',
+        },
+    )
     result = CliRunner().invoke(cli, ['build'])
     assert result.exit_code == 0
     assert '1 files combined to form "libraries.js"' in result.output

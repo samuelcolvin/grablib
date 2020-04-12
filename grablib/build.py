@@ -38,7 +38,7 @@ class Builder:
     main class for "building" assets eg. concatenating and minifying js and compiling sass
     """
 
-    def __init__(self, *, build_root: StrPath, build: dict, download_root: StrPath=None, debug=False, **data):
+    def __init__(self, *, build_root: StrPath, build: dict, download_root: StrPath = None, debug=False, **data):
         self.build_root = Path(build_root).absolute()
         self.build = build
         self.download_root = download_root and Path(download_root).resolve()
@@ -99,7 +99,8 @@ class Builder:
                 include=d.get('include'),
                 exclude=d.get('exclude'),
                 replace=d.get('replace'),
-                debug=self.debug)
+                debug=self.debug,
+            )
             sass_gen()
 
     def wipe(self, regexes):
@@ -163,17 +164,20 @@ class Builder:
 class SassGenerator:
     _errors = _files_generated = None
 
-    def __init__(self, *,
-                 input_dir: Path,
-                 output_dir: Path,
-                 include: str=None,
-                 exclude: str=None,
-                 replace: dict=None,
-                 download_root: Path,
-                 debug: bool=False,
-                 custom_functions: Union[dict, set, list]=(),
-                 extra_importers: list=(),
-                 apply_hash: bool=False):
+    def __init__(
+        self,
+        *,
+        input_dir: Path,
+        output_dir: Path,
+        include: str = None,
+        exclude: str = None,
+        replace: dict = None,
+        download_root: Path,
+        debug: bool = False,
+        custom_functions: Union[dict, set, list] = (),
+        extra_importers: list = (),
+        apply_hash: bool = False,
+    ):
         self._in_dir = input_dir
         dir_hash = hashlib.md5(str(self._in_dir).encode()).hexdigest()
         self._size_cache_file = Path(tempfile.gettempdir()) / 'grablib_cache.{}.json'.format(dir_hash)
@@ -188,7 +192,7 @@ class SassGenerator:
             self._src_dir = self._out_dir_src
         else:
             self._src_dir = self._in_dir
-        self._include = re.compile(include or '/[^_][^/]+\.(?:css|sass|scss)$')
+        self._include = re.compile(include or r'/[^_][^/]+\.(?:css|sass|scss)$')
         self._exclude = exclude and re.compile(exclude)
         self._replace = replace or {}
         self.download_root = download_root
@@ -203,8 +207,10 @@ class SassGenerator:
         if self._debug:
             self._out_dir.mkdir(parents=True, exist_ok=True)
             if self._out_dir_src.exists():
-                raise GrablibError('With debug switched on the directory "{}" must not exist before building, '
-                                   'you should delete it with the "wipe" option.'.format(self._out_dir_src))
+                raise GrablibError(
+                    'With debug switched on the directory "{}" must not exist before building, '
+                    'you should delete it with the "wipe" option.'.format(self._out_dir_src)
+                )
             shutil.copytree(str(self._in_dir.resolve()), str(self._out_dir_src))
 
         if self._size_cache_file.exists():
@@ -218,8 +224,9 @@ class SassGenerator:
         if not self._errors:
             main_logger.info('%d css files generated in %0.0fms, 0 errors', self._files_generated, time_taken)
         else:
-            main_logger.error('%d css files generated in %0.0fms, %d errors',
-                              self._files_generated, time_taken, self._errors)
+            main_logger.error(
+                '%d css files generated in %0.0fms, %d errors', self._files_generated, time_taken, self._errors
+            )
             raise GrablibError('sass errors')
 
     def process_directory(self, d: Path):
