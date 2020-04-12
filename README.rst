@@ -87,8 +87,8 @@ You can also call grablib from python:
     grab.download()
     grab.build()
 
-.. |Build Status| image:: https://travis-ci.org/samuelcolvin/grablib.svg?branch=master
-   :target: https://travis-ci.org/samuelcolvin/grablib
+.. |Build Status| image:: https://github.com/samuelcolvin/grablib/workflows/CI/badge.svg
+   :target: https://github.com/samuelcolvin/grablib/actions?query=workflow%3ACI
 .. |codecov.io| image:: http://codecov.io/github/samuelcolvin/grablib/coverage.svg?branch=master
    :target: http://codecov.io/github/samuelcolvin/grablib?branch=master
 .. |PyPI Status| image:: https://img.shields.io/pypi/v/grablib.svg?style=flat

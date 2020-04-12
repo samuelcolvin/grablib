@@ -1,14 +1,8 @@
-import sys
-
 from click.testing import CliRunner
 from pytest_toolbox import gettree, mktree
 
 from grablib.cli import cli
 from grablib.common import log_config
-
-
-def test_test_failures():
-    assert sys.version_info < (3, 7) or sys.version_info >= (3, 8)
 
 
 def test_simple_wrong_path():
