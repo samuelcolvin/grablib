@@ -27,12 +27,9 @@ class Downloader:
     main class for downloading library files based on json file.
     """
 
-    def __init__(self, *,
-                 download_root: StrPath,
-                 download: dict,
-                 aliases: dict=None,
-                 lock: StrPath='.grablib.lock',
-                 **data):
+    def __init__(
+        self, *, download_root: StrPath, download: dict, aliases: dict = None, lock: StrPath = '.grablib.lock', **data
+    ):
         """
         :param download_root: path to download file to
         :param downloads: dict of urls and paths to download from from > to
@@ -71,8 +68,12 @@ class Downloader:
                 raise GrablibError('Error downloading "{}" to "{}"'.format(url, value)) from e
         self._delete_stale()
         self._save_lock()
-        main_logger.info('Download finished: %d files downloaded, %d stale files deleted, %d existing and ignored',
-                         self._downloaded, self._stale_deleted, self._skipped)
+        main_logger.info(
+            'Download finished: %d files downloaded, %d stale files deleted, %d existing and ignored',
+            self._downloaded,
+            self._stale_deleted,
+            self._skipped,
+        )
 
     def _process_normal_file(self, url, dst):
         new_path = self._file_path(url, dst, regex=r'/(?P<filename>[^/]+)$')
@@ -145,8 +146,12 @@ class Downloader:
                         targets = [targets]
                     for target in targets:
                         new_path = self._file_path(filepath, target, regex=regex_pattern)
-                        progress_logger.debug('"%s" ➤ "%s" (regex: "%s")',
-                                              filepath, new_path.relative_to(self.download_root), regex_pattern)
+                        progress_logger.debug(
+                            '"%s" ➤ "%s" (regex: "%s")',
+                            filepath,
+                            new_path.relative_to(self.download_root),
+                            regex_pattern,
+                        )
                         self._write(new_path, zipf.read(filepath), url)
                         zcopied += 1
         return zcopied
@@ -189,9 +194,12 @@ class Downloader:
                     progress_logger.info('deleting: %s which is stale..', path.relative_to(self.download_root))
                     path.rmdir()
             else:
-                progress_logger.error('Not deleting "%s" which is in the lock file but not the definition '
-                                      'file, however appears to have been modified since it was downloaded. '
-                                      'Please check and delete the file manually.', name)
+                progress_logger.error(
+                    'Not deleting "%s" which is in the lock file but not the definition '
+                    'file, however appears to have been modified since it was downloaded. '
+                    'Please check and delete the file manually.',
+                    name,
+                )
                 raise GrablibError('stale file modified')
 
     def _file_path(self, src_path, dest, regex):
@@ -243,11 +251,7 @@ class Downloader:
         Add details of the files downloaded to _new_lock so they can be saved to the lock file.
         Also remove path from _stale_files, whatever remains at the end therefore is stale and can be deleted.
         """
-        self._new_lock.append({
-            'url': url,
-            'name': name,
-            'hash': hash_,
-        })
+        self._new_lock.append({'url': url, 'name': name, 'hash': hash_})
         self._stale_files.pop(name, None)
 
     def _path_hash(self, path: Path):

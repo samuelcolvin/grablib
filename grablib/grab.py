@@ -8,12 +8,12 @@ from .build import Builder
 from .common import GrablibError, main_logger
 from .download import Downloader
 
-STD_FILE_NAMES = [re.compile('grablib\.ya?ml'), re.compile('grablib\.json')]
+STD_FILE_NAMES = [re.compile(r'grablib\.ya?ml'), re.compile(r'grablib\.json')]
 yaml = YAML(typ='safe')
 
 
 class Grab:
-    def __init__(self, config_file: str=None, *, download_root: str=None, debug=None):
+    def __init__(self, config_file: str = None, *, download_root: str = None, debug=None):
         """
         Process a file or json string defining files to download and what to do with them.
 
@@ -52,7 +52,7 @@ class Grab:
         build()
 
     @classmethod
-    def yaml_or_json(cls, file_path:  Path):
+    def yaml_or_json(cls, file_path: Path):
         if file_path.name.endswith(('.yml', '.yaml')):
             main_logger.debug('Processing %s as a yaml file', file_path)
             return yaml.load
@@ -71,5 +71,7 @@ class Grab:
                 return next(f for f in files if std_file_name.fullmatch(f.name))
             except StopIteration:
                 pass
-        raise GrablibError('Unable to find config file with standard name "grablib.yml" or "grablib.json" in the '
-                           'current working directory')
+        raise GrablibError(
+            'Unable to find config file with standard name "grablib.yml" or "grablib.json" in the '
+            'current working directory'
+        )

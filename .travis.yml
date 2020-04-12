@@ -4,11 +4,7 @@ cache: pip
 
 python:
 - '3.6'
-- 'nightly'  # currently 3.7
-
-matrix:
-  allow_failures:
-  - python: 'nightly'
+- '3.7'
 
 install:
 - make install
