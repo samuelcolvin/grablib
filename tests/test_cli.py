@@ -9,8 +9,12 @@ def test_simple_wrong_path():
     runner = CliRunner()
     result = runner.invoke(cli, ['download', '-f', 'test_file'])
     assert result.exit_code == 2
-    assert result.output == ('Usage: cli [OPTIONS] [download / build]\n\n'
-                             'Error: Invalid value for "-f" / "--config-file": Path "test_file" does not exist.\n')
+    assert result.output == (
+        'Usage: cli [OPTIONS] [download / build]\n'
+        "Try 'cli --help' for help.\n"
+        '\n'
+        "Error: Invalid value for '-f' / '--config-file': File 'test_file' does not exist.\n"
+    )
 
 
 def test_invalid_json(tmpworkdir):

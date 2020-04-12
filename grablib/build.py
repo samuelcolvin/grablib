@@ -282,7 +282,6 @@ class SassGenerator:
                 precision=10,
                 importers=self._importers,
                 custom_functions=self._custom_functions,
-                custom_import_extensions=['.css'],
             )
         except sass.CompileError as e:
             self._errors += 1
