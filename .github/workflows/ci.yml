@@ -70,6 +70,7 @@ jobs:
     - run: grablib -V
     - run: grablib -f examples/grablib.yml download
     - run: ls -la
+    - run: ./tests/check_download_worked.py
 
   deploy:
     needs: [test, run]
