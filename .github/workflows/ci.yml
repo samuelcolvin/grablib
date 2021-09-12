@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu, windows, macos]
+        os: [ubuntu, macos]
         python-version: ['3.6', '3.7', '3.8', '3.9']
 
     env:
@@ -31,20 +31,15 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: install dependencies
-      run: |
-        make install
-        pip freeze
+    - run: make install
+    - run: pip freeze
 
     - run: grablib -V
 
-    - name: lint
-      run: make lint
+    - run: make lint
 
-    - name: test
-      run: |
-        make test
-        coverage xml
+    - run: make test
+    - run: coverage xml
 
     - uses: samuelcolvin/codecov-action@env-vars
       with:
