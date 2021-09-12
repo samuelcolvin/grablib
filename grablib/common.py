@@ -1,3 +1,4 @@
+import os
 import logging
 import logging.config
 from typing import Union
@@ -6,6 +7,7 @@ import click
 
 main_logger = logging.getLogger('grablib.main')
 progress_logger = logging.getLogger('grablib.progress')
+on_windows = os.name == 'nt'
 
 
 class ClickHandler(logging.Handler):
@@ -19,8 +21,11 @@ class ClickHandler(logging.Handler):
         return self.formats.get(record.levelno, {'fg': 'red'})
 
     def emit(self, record):
-        log_entry = self.format(record)
-        click.secho(log_entry, **self.get_log_format(record))
+        if on_windows:
+            super().emit(record)
+        else:
+            log_entry = self.format(record)
+            click.secho(log_entry, **self.get_log_format(record))
 
 
 class ProgressHandler(ClickHandler):
