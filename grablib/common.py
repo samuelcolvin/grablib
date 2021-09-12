@@ -21,10 +21,10 @@ class ClickHandler(logging.Handler):
         return self.formats.get(record.levelno, {'fg': 'red'})
 
     def emit(self, record):
+        log_entry = self.format(record)
         if on_windows:
-            super().emit(record)
+            print(log_entry, flush=True)
         else:
-            log_entry = self.format(record)
             click.secho(log_entry, **self.get_log_format(record))
 
 
