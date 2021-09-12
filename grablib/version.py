@@ -1,1 +1,3 @@
-VERSION = '0.8'
+__all__ = ('VERSION',)
+
+VERSION = 'dev'
